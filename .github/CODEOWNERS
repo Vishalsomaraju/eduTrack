@@ -1,7 +1,11 @@
+# Default owner
 * @Vishalsomaraju
 
+# Frontend
 /frontend/ @Vishalsomaraju
 
+# Backend
 /backend/ @saihitesh007
 
-\*.md @Vishalsomaraju
+# Documentation
+*.md @Vishalsomaraju
