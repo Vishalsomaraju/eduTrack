@@ -230,8 +230,8 @@ Lenis version: **latest** — smooth scroll, feeds scroll progress to GSAP Scrol
 
 ### Month 1 — Foundation
 
-- [ ] Vite + React + TS + Tailwind setup
-- [ ] tokens.css with full light/dark system
+- [x] Vite + React + TS + Tailwind setup
+- [x] tokens.css with full light/dark system
 - [ ] Supabase project created, schema migrated
 - [ ] Auth system (login, role routing, protected routes)
 - [ ] Sidebar + PageShell layout

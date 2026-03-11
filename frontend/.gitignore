@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Sensitive / secret files
+.env
+.env.production
+.env.staging
+CLAUDE.local.md
+.vercel
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

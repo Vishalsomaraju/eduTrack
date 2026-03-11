@@ -1,0 +1,111 @@
+/* ============================================================
+   EduTrack — Global Styles
+   Tailwind v4 base + Google Fonts + design token integration
+   ============================================================ */
+
+/* ── Google Fonts: Syne (Display) + DM Sans (Body) ────────── */
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300;1,9..40,400;1,9..40,500;1,9..40,600&display=swap');
+
+/* ── Tailwind v4 ──────────────────────────────────────────── */
+@import "tailwindcss";
+
+/* ── Design Tokens ────────────────────────────────────────── */
+@import "./tokens.css";
+
+/* ── Tailwind Theme: Expose CSS vars as Tailwind utilities ── */
+@theme {
+  /* Colors — usable as bg-bg-base, text-text-primary, etc. */
+  --color-bg-base: var(--bg-base);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-blue: var(--accent-blue);
+  --color-accent-green: var(--accent-green);
+  --color-accent-red: var(--accent-red);
+  --color-text-primary: var(--text-primary);
+  --color-text-muted: var(--text-muted);
+  --color-border: var(--border);
+
+  /* Font families — usable as font-display, font-body */
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+
+  /* Shadows — usable as shadow-sm, shadow-md, shadow-lg */
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
+  /* Radius — usable as rounded-card, rounded-btn, rounded-modal */
+  --radius-card: 12px;
+  --radius-btn: 8px;
+  --radius-input: 8px;
+  --radius-modal: 16px;
+  --radius-pill: 9999px;
+}
+
+/* ── Base Styles ──────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  transition: background-color var(--transition-base),
+              color var(--transition-base);
+}
+
+/* ── Typography Defaults ──────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+/* ── Focus Styles ─────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── Selection ────────────────────────────────────────────── */
+::selection {
+  background-color: var(--accent);
+  color: var(--bg-base);
+}
+
+/* ── Scrollbar (WebKit) ───────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: var(--radius-pill);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}

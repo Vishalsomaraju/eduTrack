@@ -1,0 +1,102 @@
+/* ============================================================
+   EduTrack Design Tokens — Source of Truth
+   All colors come from this file. NEVER hardcode a color value.
+   Use CSS variables everywhere: var(--bg-base), var(--accent), etc.
+   ============================================================ */
+
+/* ── Dark Theme (default) ─────────────────────────────────── */
+[data-theme="dark"] {
+  /* Backgrounds */
+  --bg-base: #070B14;
+  --bg-surface: #0D1526;
+  --bg-elevated: #162035;
+
+  /* Accent Colors */
+  --accent: #F5A623;          /* amber gold — primary CTA */
+  --accent-hover: #E69816;    /* darkened accent for hover states */
+  --accent-blue: #3B82F6;     /* charts, secondary actions */
+  --accent-green: #10B981;    /* good attendance, success states */
+  --accent-red: #EF4444;      /* alerts, at-risk students */
+
+  /* Text */
+  --text-primary: #F0F4FF;
+  --text-muted: #6B7FA3;
+
+  /* Borders */
+  --border: #1E2D4A;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+
+  /* Overlays */
+  --overlay: rgba(7, 11, 20, 0.7);
+}
+
+/* ── Light Theme ──────────────────────────────────────────── */
+[data-theme="light"] {
+  /* Backgrounds */
+  --bg-base: #F8F6F0;         /* warm parchment — NOT pure white */
+  --bg-surface: #EDEAE2;
+  --bg-elevated: #E4E0D6;
+
+  /* Accent Colors */
+  --accent: #D4891A;          /* amber darkened for light bg contrast */
+  --accent-hover: #C07B15;    /* darkened accent for hover states */
+  --accent-blue: #2563EB;
+  --accent-green: #059669;
+  --accent-red: #DC2626;
+
+  /* Text */
+  --text-primary: #0D1526;
+  --text-muted: #4B5A72;
+
+  /* Borders */
+  --border: #C8C4BA;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  /* Overlays */
+  --overlay: rgba(248, 246, 240, 0.7);
+}
+
+/* ── Typography Tokens ────────────────────────────────────── */
+:root {
+  --font-display: 'Syne', sans-serif;           /* Display / Headings */
+  --font-body: 'DM Sans', sans-serif;           /* Body / Data / UI */
+}
+
+/* ── Spacing Tokens ───────────────────────────────────────── */
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+}
+
+/* ── Radius Tokens ────────────────────────────────────────── */
+:root {
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;        /* Button, Input */
+  --radius-xl: 12px;       /* Card */
+  --radius-2xl: 16px;      /* Modal */
+  --radius-full: 9999px;   /* Pill / Avatar */
+}
+
+/* ── Transition Tokens ────────────────────────────────────── */
+:root {
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 400ms ease;
+}
