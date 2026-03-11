@@ -12,8 +12,8 @@ The defining feature: live attendance marking with instant dashboard updates.
 
 **Stack:**
 
-- Frontend: React 18 + JavaScript + Vite + Tailwind CSS
-- Animation: Three.js (r134) + GSAP 3 + ScrollTrigger + Lenis
+- Frontend: React 19 + JavaScript + Vite + Tailwind CSS
+- Animation: Three.js (r183) + GSAP 3 + ScrollTrigger + Lenis
 - UI Motion: Framer Motion
 - Charts: Recharts
 - Backend: FastAPI (Python) — handled by teammate
@@ -119,7 +119,7 @@ src/
 
 1. Check `src/components/ui/` — if a primitive exists, USE IT
 2. Check `src/components/dashboard/` — don't duplicate widgets
-3. If creating new, follow the naming pattern: `PascalCase.tsx`
+3. If creating new, follow the naming pattern: `PascalCase.jsx`
 
 ### Every component must:
 
@@ -134,12 +134,12 @@ src/
 
 - Simple hover/transition states → Framer Motion `motion.*` elements
 - Page transitions → Framer Motion `AnimatePresence`
-- Complex sequences, ScrollTrigger, Three.js → GSAP only, in `animations.ts` or `BookScene.tsx`
+- Complex sequences, ScrollTrigger, Three.js → GSAP only, in `animations.js` or `BookScene.jsx`
 - NEVER mix Framer Motion and GSAP on the same element
 
 ### Real-time rules:
 
-- ALL Supabase subscriptions go in `src/hooks/useRealtime.ts` or a dedicated hook
+- ALL Supabase subscriptions go in `src/hooks/useRealtime.js` or a dedicated hook
 - NEVER write `supabase.channel()` inline inside a component
 - Always unsubscribe in the cleanup function of `useEffect`
 
@@ -192,7 +192,7 @@ return () => {
 
 ## 🔐 Auth Rules
 
-- Auth state lives in `src/stores/authStore.ts` (Zustand)
+- Auth state lives in `src/stores/authStore.js` (Zustand)
 - Role is stored in `profiles` table, not in JWT metadata
 - Protected routes check `authStore.role` — redirect to `/` if unauthorized
 - Three roles: `admin` | `faculty` | `student`
@@ -206,11 +206,11 @@ return () => {
 
 Files:
 
-- `src/components/landing/BookScene.tsx` → Three.js scene, book mesh, mouse tracking
-- `src/lib/animations.ts` → GSAP timelines for book open sequence
-- `src/components/landing/LandingHero.tsx` → React wrapper, canvas mount, HTML overlay
+- `src/components/landing/BookScene.jsx` → Three.js scene, book mesh, mouse tracking
+- `src/lib/animations.js` → GSAP timelines for book open sequence
+- `src/components/landing/LandingHero.jsx` → React wrapper, canvas mount, HTML overlay
 
-Three.js version: **r134**
+Three.js version: **r183**
 GSAP version: **3.x** with ScrollTrigger and CustomEase plugins
 Lenis version: **latest** — smooth scroll, feeds scroll progress to GSAP ScrollTrigger
 
@@ -222,7 +222,7 @@ Lenis version: **latest** — smooth scroll, feeds scroll progress to GSAP Scrol
 - Theme change: update Three.js `AmbientLight` and `DirectionalLight` intensity
   - Dark: ambient 0.3, directional 1.2
   - Light: ambient 0.8, directional 0.6
-- NEVER put business logic in BookScene.tsx — it only handles visuals
+- NEVER put business logic in BookScene.jsx — it only handles visuals
 
 ---
 
@@ -230,7 +230,7 @@ Lenis version: **latest** — smooth scroll, feeds scroll progress to GSAP Scrol
 
 ### Month 1 — Foundation
 
-- [x] Vite + React + TS + Tailwind setup
+- [x] Vite + React + JS + Tailwind setup
 - [x] tokens.css with full light/dark system
 - [ ] Supabase project created, schema migrated
 - [ ] Auth system (login, role routing, protected routes)
@@ -285,7 +285,7 @@ Format: method, path, request body, response body, auth required Y/N.
 > Update this section every week
 
 **Week:** 1
-**Phase:** Setup & Planning
-**In progress:** Nothing yet — project setup pending
+**Phase:** Design System Done — App Implementation Not Started
+**In progress:** Nothing — tokens.css + globals.css + supabase.js done; App.jsx still default Vite boilerplate
 **Blocked by:** Nothing
-**Last updated:** [DATE]
+**Last updated:** 2026-03-11

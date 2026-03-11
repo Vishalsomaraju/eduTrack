@@ -314,10 +314,10 @@ app.add_middleware(
 
 ### Month 1 — Foundation
 
-- [ ] FastAPI project setup + folder structure
-- [ ] requirements.txt + .env.example
-- [ ] Supabase client connected
-- [ ] Auth verification endpoint + JWT decode
+- [x] FastAPI project setup + folder structure
+- [x] requirements.txt + .env.example  ← .env.example still needs committing
+- [x] Supabase client connected
+- [x] Auth verification endpoint + JWT decode
 - [ ] Student CRUD endpoints
 - [ ] Subject CRUD endpoints
 - [ ] Faculty endpoints
@@ -355,7 +355,7 @@ app.add_middleware(
 
 ## 👥 Team
 
-- **Frontend:** [Frontend dev name] — React, Supabase client, UI
+- **Frontend:** Vishal — React, Supabase client, UI
 - **Backend (you):** FastAPI, PostgreSQL queries, business logic
 
 ### API contract rule:
@@ -370,7 +370,7 @@ Update the API Contract section in this file AND in `API_CONTRACT.md`.
 > Update this section every week
 
 **Week:** 1
-**Phase:** Setup
-**In progress:** Nothing yet
+**Phase:** Foundation — Core infra done
+**In progress:** main.py + config + auth/utils + dependencies implemented; CRUD endpoints next
 **Blocked by:** Nothing
-**Last updated:** [DATE]
+**Last updated:** 2026-03-11

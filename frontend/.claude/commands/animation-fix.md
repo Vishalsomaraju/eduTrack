@@ -14,10 +14,10 @@ If the bug is outside these files → tell the user it's out of scope for this a
 
 ## Your Stack — Know This Cold
 
-- **Three.js:** r134 (NOT latest — don't suggest APIs from newer versions)
+- **Three.js:** r183
 - **GSAP:** 3.x with ScrollTrigger, CustomEase plugins registered
 - **Lenis:** smooth scroll — feeds `lenis.scroll` progress into GSAP ScrollTrigger
-- **React:** 18 — Three.js canvas is mounted via `useRef` + `useEffect` in LandingHero.jsx
+- **React:** 19 — Three.js canvas is mounted via `useRef` + `useEffect` in LandingHero.jsx
 - **NO Framer Motion** in these files. Ever.
 
 ## Step 1 — Understand the Bug
@@ -154,7 +154,6 @@ function disposeScene(scene, renderer) {
 - Never change the book mesh geometry unless that IS the bug
 - Never touch React state — the scene is purely visual
 - Never add new npm packages without asking first
-- If you need a Three.js feature that requires r135+ — find a r134 equivalent
 - Test that cleanup still works after your fix (no memory leaks)
 - Keep the lerp factors and ease values I've set — feel is intentional
 

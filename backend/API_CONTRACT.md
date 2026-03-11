@@ -4,7 +4,7 @@
 
 # Any change here must be communicated to both sides before implementation.
 
-# Last updated: [DATE]
+# Last updated: 2026-03-11
 
 ---
 
@@ -207,4 +207,4 @@ All errors follow this format:
 
 | Date   | Change                   | Who  |
 | ------ | ------------------------ | ---- |
-| [DATE] | Initial contract defined | Both |
+| 2026-03-11 | Initial contract defined | Both |

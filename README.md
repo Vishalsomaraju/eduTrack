@@ -64,7 +64,7 @@ EduTrack sits in the gap — **focused, fast, and actually usable** — with ana
 ## ✦ Tech Stack
 
 ```
-Frontend          →   React 18  ·  Vite  ·  Tailwind CSS  ·  Framer Motion
+Frontend          →   React 19  ·  Vite  ·  Tailwind CSS  ·  Framer Motion
 Animation         →   Three.js  ·  GSAP + ScrollTrigger  ·  Lenis
 Charts            →   Recharts
 Backend           →   FastAPI  (Python)
