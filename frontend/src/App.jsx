@@ -1,35 +1,128 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useAuth } from '@/hooks/useAuth'
+import { useTheme } from '@/hooks/useTheme'
+import LoginPage from '@/pages/LoginPage'
+import ProtectedRoute from '@/components/layout/ProtectedRoute'
+import PageShell from '@/components/layout/PageShell'
 
-function App() {
-  const [count, setCount] = useState(0)
-
+// ── Stub pages (full implementations in Month 2) ──────────────
+function StubPage({ title }) {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+        fontFamily: 'var(--font-display)',
+        color: 'var(--text-primary)',
+        fontSize: '1.25rem',
+        fontWeight: 600,
+      }}
+    >
+      {title}
+    </div>
   )
 }
 
-export default App
+// ── AppContent — must be inside BrowserRouter so hooks work ───
+function AppContent() {
+  // Session listener runs for the entire app lifetime
+  useAuth()
+
+  // Apply theme to <html data-theme="..."> + persist to localStorage
+  useTheme()
+
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <PageShell>
+              <StubPage title="Dashboard" />
+            </PageShell>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/attendance"
+        element={
+          <ProtectedRoute>
+            <PageShell>
+              <StubPage title="Attendance" />
+            </PageShell>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/marks"
+        element={
+          <ProtectedRoute>
+            <PageShell>
+              <StubPage title="Marks" />
+            </PageShell>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute allowedRoles={['admin', 'faculty']}>
+            <PageShell>
+              <StubPage title="Analytics" />
+            </PageShell>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/students"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <PageShell>
+              <StubPage title="Students" />
+            </PageShell>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/faculty"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <PageShell>
+              <StubPage title="Faculty" />
+            </PageShell>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/subjects"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <PageShell>
+              <StubPage title="Subjects" />
+            </PageShell>
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
+  )
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
+  )
+}
