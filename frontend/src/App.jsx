@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useTheme } from '@/hooks/useTheme'
 import LoginPage from '@/pages/LoginPage'
+import AttendancePage from '@/pages/AttendancePage'
 import ProtectedRoute from '@/components/layout/ProtectedRoute'
 import PageShell from '@/components/layout/PageShell'
 
@@ -55,7 +56,7 @@ function AppContent() {
         element={
           <ProtectedRoute>
             <PageShell>
-              <StubPage title="Attendance" />
+              <AttendancePage />
             </PageShell>
           </ProtectedRoute>
         }

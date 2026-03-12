@@ -1,0 +1,280 @@
+// AttendancePage.jsx — Role-aware attendance page.
+// Admin: summary + marker. Faculty: marker + summary. Student: summary + calendar.
+
+import { useState, useEffect } from "react";
+import { useAuthStore } from "@/stores/authStore";
+import { useAttendance } from "@/hooks/useAttendance";
+import AttendanceMarker from "@/components/attendance/AttendanceMarker";
+import AttendanceSummary from "@/components/attendance/AttendanceSummary";
+import AttendanceCalendar from "@/components/attendance/AttendanceCalendar";
+
+const ROLE_SUBTITLE = {
+  admin: "System-wide attendance overview",
+  faculty: "Mark and review class attendance",
+  student: "Your attendance record",
+};
+
+// Shared subject selector (native select, Input-style)
+function SubjectSelect({ subjects, value, onChange, label = "Subject" }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+        minWidth: 220,
+      }}
+    >
+      <label
+        style={{
+          fontFamily: "var(--font-display)",
+          fontWeight: 600,
+          fontSize: "0.7rem",
+          textTransform: "uppercase",
+          letterSpacing: "0.08em",
+          color: "var(--text-muted)",
+          display: "block",
+        }}
+      >
+        {label}
+      </label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={{
+          background: "var(--input-bg)",
+          color: value ? "var(--text-primary)" : "var(--text-muted)",
+          height: "42px",
+          borderRadius: "10px",
+          fontFamily: "var(--font-body)",
+          fontSize: "0.9rem",
+          border: "1px solid var(--input-border)",
+          boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2)",
+          padding: "0 14px",
+          outline: "none",
+          cursor: "pointer",
+          boxSizing: "border-box",
+          appearance: "none",
+          WebkitAppearance: "none",
+          width: "100%",
+        }}
+      >
+        <option value="">All subjects</option>
+        {subjects.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name} ({s.code})
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+// ── Admin view ─────────────────────────────────────────────────
+function AdminView({ subjects }) {
+  const [selectedSubject, setSelectedSubject] = useState("");
+  const selected = subjects.find((s) => s.id === selectedSubject);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <SubjectSelect
+        subjects={subjects}
+        value={selectedSubject}
+        onChange={setSelectedSubject}
+        label="Filter by Subject"
+      />
+      <AttendanceSummary
+        subjectId={selectedSubject || undefined}
+        subjectName={selected?.name}
+      />
+      <AttendanceMarker />
+    </div>
+  );
+}
+
+// ── Faculty view ───────────────────────────────────────────────
+function FacultyView({ subjects }) {
+  // AttendanceMarker manages its own subject selector internally.
+  // Here we show a summary below the marker once a subject is chosen.
+  // We expose a separate selector so summary can be driven independently.
+  const [selectedSubject, setSelectedSubject] = useState("");
+  const selected = subjects.find((s) => s.id === selectedSubject);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <AttendanceMarker />
+      {subjects.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <SubjectSelect
+            subjects={subjects}
+            value={selectedSubject}
+            onChange={setSelectedSubject}
+            label="Review Subject"
+          />
+          {selectedSubject && (
+            <AttendanceSummary
+              subjectId={selectedSubject}
+              subjectName={selected?.name}
+            />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Student view ───────────────────────────────────────────────
+function StudentView({ subjects, userId }) {
+  const { fetchStudentAttendance } = useAttendance();
+  const [selectedSubject, setSelectedSubject] = useState("");
+  const [calRecords, setCalRecords] = useState([]);
+  const today = new Date();
+  const selected = subjects.find((s) => s.id === selectedSubject);
+
+  // Auto-select first subject
+  useEffect(() => {
+    if (subjects.length > 0 && !selectedSubject) {
+      setSelectedSubject(subjects[0].id);
+    }
+  }, [subjects]);
+
+  // Fetch raw attendance records for the calendar whenever subject changes
+  useEffect(() => {
+    if (!selectedSubject || !userId) {
+      setCalRecords([]);
+      return;
+    }
+    fetchStudentAttendance(selectedSubject, userId).then(({ data }) => {
+      setCalRecords(data ?? []);
+    });
+  }, [selectedSubject, userId]);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <SubjectSelect
+        subjects={subjects}
+        value={selectedSubject}
+        onChange={(val) => {
+          setSelectedSubject(val);
+          setCalRecords([]);
+        }}
+      />
+
+      {selectedSubject && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "minmax(0, 1fr) minmax(0, 340px)",
+            gap: 20,
+            alignItems: "start",
+          }}
+          className="att-student-grid"
+        >
+          <AttendanceSummary
+            subjectId={selectedSubject}
+            studentId={userId}
+            subjectName={selected?.name}
+          />
+          <AttendanceCalendar
+            records={calRecords}
+            month={today.getMonth()}
+            year={today.getFullYear()}
+          />
+        </div>
+      )}
+
+      {!selectedSubject && (
+        <div
+          style={{
+            textAlign: "center",
+            padding: "60px 0",
+            color: "var(--text-muted)",
+            fontFamily: "var(--font-body)",
+            fontSize: "0.9rem",
+          }}
+        >
+          Select a subject above to view your attendance.
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Page ───────────────────────────────────────────────────────
+
+export default function AttendancePage() {
+  const { user, role } = useAuthStore();
+  const { fetchSubjects } = useAttendance();
+  const [subjects, setSubjects] = useState([]);
+  const [loadingSubjects, setLoadingSubjects] = useState(true);
+
+  useEffect(() => {
+    fetchSubjects().then(({ data }) => {
+      setSubjects(data ?? []);
+      setLoadingSubjects(false);
+    });
+  }, []);
+
+  return (
+    <>
+      {/* Responsive override for student grid on mobile */}
+      <style>{`
+        @media (max-width: 767px) {
+          .att-student-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
+
+      {/* ── Page title ── */}
+      <div style={{ marginBottom: 28 }}>
+        <h1
+          style={{
+            fontFamily: "var(--font-display)",
+            fontWeight: 700,
+            fontSize: "1.5rem",
+            color: "var(--text-primary)",
+            margin: 0,
+            marginBottom: 4,
+          }}
+        >
+          Attendance
+        </h1>
+        <p
+          style={{
+            fontFamily: "var(--font-body)",
+            fontSize: "0.9rem",
+            color: "var(--text-muted)",
+            margin: 0,
+          }}
+        >
+          {ROLE_SUBTITLE[role] ?? ""}
+        </p>
+      </div>
+
+      {/* ── Loading subjects ── */}
+      {loadingSubjects && (
+        <div
+          style={{
+            color: "var(--text-muted)",
+            fontFamily: "var(--font-body)",
+            fontSize: "0.875rem",
+          }}
+        >
+          Loading...
+        </div>
+      )}
+
+      {/* ── Role views ── */}
+      {!loadingSubjects && role === "admin" && (
+        <AdminView subjects={subjects} />
+      )}
+      {!loadingSubjects && role === "faculty" && (
+        <FacultyView subjects={subjects} />
+      )}
+      {!loadingSubjects && role === "student" && (
+        <StudentView subjects={subjects} userId={user?.id} />
+      )}
+    </>
+  );
+}
