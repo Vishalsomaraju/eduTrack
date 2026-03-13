@@ -1,38 +1,39 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useAuth } from '@/hooks/useAuth'
-import { useTheme } from '@/hooks/useTheme'
-import LoginPage from '@/pages/LoginPage'
-import AttendancePage from '@/pages/AttendancePage'
-import ProtectedRoute from '@/components/layout/ProtectedRoute'
-import PageShell from '@/components/layout/PageShell'
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/hooks/useTheme";
+import LoginPage from "@/pages/LoginPage";
+import AttendancePage from "@/pages/AttendancePage";
+import MarksPage from "@/pages/MarksPage";
+import ProtectedRoute from "@/components/layout/ProtectedRoute";
+import PageShell from "@/components/layout/PageShell";
 
 // ── Stub pages (full implementations in Month 2) ──────────────
 function StubPage({ title }) {
   return (
     <div
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100%',
-        fontFamily: 'var(--font-display)',
-        color: 'var(--text-primary)',
-        fontSize: '1.25rem',
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+        fontFamily: "var(--font-display)",
+        color: "var(--text-primary)",
+        fontSize: "1.25rem",
         fontWeight: 600,
       }}
     >
       {title}
     </div>
-  )
+  );
 }
 
 // ── AppContent — must be inside BrowserRouter so hooks work ───
 function AppContent() {
   // Session listener runs for the entire app lifetime
-  useAuth()
+  useAuth();
 
   // Apply theme to <html data-theme="..."> + persist to localStorage
-  useTheme()
+  useTheme();
 
   return (
     <Routes>
@@ -67,7 +68,7 @@ function AppContent() {
         element={
           <ProtectedRoute>
             <PageShell>
-              <StubPage title="Marks" />
+              <MarksPage />
             </PageShell>
           </ProtectedRoute>
         }
@@ -76,7 +77,7 @@ function AppContent() {
       <Route
         path="/analytics"
         element={
-          <ProtectedRoute allowedRoles={['admin', 'faculty']}>
+          <ProtectedRoute allowedRoles={["admin", "faculty"]}>
             <PageShell>
               <StubPage title="Analytics" />
             </PageShell>
@@ -87,7 +88,7 @@ function AppContent() {
       <Route
         path="/students"
         element={
-          <ProtectedRoute allowedRoles={['admin']}>
+          <ProtectedRoute allowedRoles={["admin"]}>
             <PageShell>
               <StubPage title="Students" />
             </PageShell>
@@ -98,7 +99,7 @@ function AppContent() {
       <Route
         path="/faculty"
         element={
-          <ProtectedRoute allowedRoles={['admin']}>
+          <ProtectedRoute allowedRoles={["admin"]}>
             <PageShell>
               <StubPage title="Faculty" />
             </PageShell>
@@ -109,7 +110,7 @@ function AppContent() {
       <Route
         path="/subjects"
         element={
-          <ProtectedRoute allowedRoles={['admin']}>
+          <ProtectedRoute allowedRoles={["admin"]}>
             <PageShell>
               <StubPage title="Subjects" />
             </PageShell>
@@ -117,7 +118,7 @@ function AppContent() {
         }
       />
     </Routes>
-  )
+  );
 }
 
 export default function App() {
@@ -125,5 +126,5 @@ export default function App() {
     <BrowserRouter>
       <AppContent />
     </BrowserRouter>
-  )
+  );
 }
