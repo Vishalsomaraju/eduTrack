@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 import LoginPage from "@/pages/LoginPage";
+import DashboardPage from "@/pages/DashboardPage";
 import AttendancePage from "@/pages/AttendancePage";
 import MarksPage from "@/pages/MarksPage";
 import ProtectedRoute from "@/components/layout/ProtectedRoute";
@@ -46,7 +47,7 @@ function AppContent() {
         element={
           <ProtectedRoute>
             <PageShell>
-              <StubPage title="Dashboard" />
+              <DashboardPage />
             </PageShell>
           </ProtectedRoute>
         }
