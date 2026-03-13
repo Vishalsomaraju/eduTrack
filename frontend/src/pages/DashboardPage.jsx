@@ -24,6 +24,9 @@ import SubjectCard from "@/components/dashboard/SubjectCard";
 import QuickMarkAttendance from "@/components/dashboard/QuickMarkAttendance";
 import ClassPerformance from "@/components/dashboard/ClassPerformance";
 import AttendanceSummary from "@/components/attendance/AttendanceSummary";
+import AtRiskTable from "@/components/dashboard/AtRiskTable";
+import SystemStats from "@/components/dashboard/SystemStats";
+import AttendanceTrendChart from "@/components/dashboard/AttendanceTrendChart";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -667,6 +670,287 @@ function FacultyDashboard() {
   );
 }
 
+// ── Admin dashboard ─────────────────────────────────────────────────────────
+
+function AdminDashboard() {
+  const { user, profile } = useAuthStore();
+  const {
+    fetchSubjects,
+    fetchAttendanceSummary,
+    fetchAttendanceTrend,
+    fetchAllProfiles,
+  } = useAttendance();
+  const { fetchMarks } = useMarks();
+
+  const [subjects, setSubjects] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [faculty, setFaculty] = useState([]);
+  // { [subjectId]: { name, students: summaryArray, avg } }
+  const [allSummaries, setAllSummaries] = useState({});
+  // flat mark records, each enriched with subjectName
+  const [allMarksFlat, setAllMarksFlat] = useState([]);
+  const [trendData, setTrendData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // ── Derived stats ──────────────────────────────────────────────
+  const totalStudents = students.length;
+  const totalFaculty = faculty.length;
+  const totalSubjects = subjects.length;
+
+  const overallAttendance = useMemo(() => {
+    const avgs = subjects.map((s) => allSummaries[s.id]?.avg ?? 0);
+    if (avgs.length === 0) return 0;
+    return Math.round(avgs.reduce((sum, v) => sum + v, 0) / avgs.length);
+  }, [subjects, allSummaries]);
+
+  const marksAvg = useMemo(() => {
+    const pcts = allMarksFlat
+      .filter((m) => m.max_score > 0)
+      .map((m) => Math.round((m.score / m.max_score) * 100));
+    if (pcts.length === 0) return 0;
+    return Math.round(pcts.reduce((sum, p) => sum + p, 0) / pcts.length);
+  }, [allMarksFlat]);
+
+  const atRiskCount = useMemo(() => {
+    const ids = new Set();
+    Object.values(allSummaries).forEach(({ students: sums = [] }) => {
+      sums.filter((s) => s.atRisk).forEach((s) => ids.add(s.id));
+    });
+    allMarksFlat
+      .filter((m) => m.max_score > 0 && m.score / m.max_score < 0.4)
+      .forEach((m) => ids.add(m.student_id));
+    return ids.size;
+  }, [allSummaries, allMarksFlat]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    async function load() {
+      // Step 1: base data in parallel
+      const [subjectsResult, profilesResult] = await Promise.all([
+        fetchSubjects(),
+        fetchAllProfiles(),
+      ]);
+
+      const subs = subjectsResult.data ?? [];
+      const allProfiles = profilesResult.data ?? [];
+      setSubjects(subs);
+      setStudents(allProfiles.filter((p) => p.role === "student"));
+      setFaculty(allProfiles.filter((p) => p.role === "faculty"));
+
+      if (subs.length === 0) {
+        setLoading(false);
+        return;
+      }
+
+      // Step 2: per-subject summaries + marks + trend in parallel
+      const [summaryResults, marksResults, trendResult] = await Promise.all([
+        Promise.all(subs.map((s) => fetchAttendanceSummary(s.id))),
+        Promise.all(subs.map((s) => fetchMarks(s.id))),
+        fetchAttendanceTrend(),
+      ]);
+
+      // Build summaries map
+      const summaries = {};
+      subs.forEach((s, i) => {
+        const data = summaryResults[i].data ?? [];
+        const avg =
+          data.length > 0
+            ? Math.round(
+                data.reduce((sum, st) => sum + st.percentage, 0) / data.length,
+              )
+            : 0;
+        summaries[s.id] = { name: s.name, students: data, avg };
+      });
+      setAllSummaries(summaries);
+
+      // Build flat marks array enriched with subject name
+      const marks = [];
+      subs.forEach((s, i) => {
+        const data = marksResults[i].data ?? [];
+        data.forEach((m) => marks.push({ ...m, subjectName: s.name }));
+      });
+      setAllMarksFlat(marks);
+
+      setTrendData(trendResult.data ?? []);
+      setLoading(false);
+    }
+
+    load();
+  }, [user?.id]);
+
+  const firstName = profile?.name?.split(" ")[0] ?? "there";
+
+  return (
+    <div style={{ padding: 24 }}>
+      {/* ── Greeting ──────────────────────────────────────────────── */}
+      <div style={{ marginBottom: 24 }}>
+        <h1
+          style={{
+            fontFamily: "var(--font-display)",
+            fontWeight: 700,
+            fontSize: "1.5rem",
+            color: "var(--text-primary)",
+            margin: 0,
+            letterSpacing: "-0.02em",
+          }}
+        >
+          {getGreeting()}, {firstName} 👋
+        </h1>
+        <p
+          style={{
+            fontFamily: "var(--font-body)",
+            fontWeight: 400,
+            fontSize: "0.9rem",
+            color: "var(--text-muted)",
+            margin: "4px 0 0",
+          }}
+        >
+          System Overview · {getFormattedDate()}
+        </p>
+      </div>
+
+      {/* ── System stats row ──────────────────────────────────────── */}
+      <SystemStats
+        totalStudents={totalStudents}
+        totalFaculty={totalFaculty}
+        totalSubjects={totalSubjects}
+        overallAttendance={overallAttendance}
+        atRiskCount={atRiskCount}
+        marksAvg={marksAvg}
+        loading={loading}
+      />
+
+      {/* ── Two-column: trend chart + subjects list ────────────────── */}
+      <div
+        className="grid grid-cols-1 lg:grid-cols-3 gap-4"
+        style={{ marginBottom: 16 }}
+      >
+        {/* Left (span 2): attendance trend */}
+        <div className="lg:col-span-2">
+          <AttendanceTrendChart data={trendData} loading={loading} />
+        </div>
+
+        {/* Right (span 1): subjects overview */}
+        <Card title="Subjects Overview">
+          {loading ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {[0, 1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  style={{
+                    height: 48,
+                    borderRadius: 6,
+                    background:
+                      "linear-gradient(90deg, var(--bg-elevated) 0%, rgba(255,255,255,0.04) 50%, var(--bg-elevated) 100%)",
+                    backgroundSize: "200% 100%",
+                    animation: "shimmer 1.5s infinite",
+                    animationDelay: `${i * 0.1}s`,
+                  }}
+                />
+              ))}
+            </div>
+          ) : subjects.length === 0 ? (
+            <p
+              style={{
+                fontFamily: "var(--font-body)",
+                fontSize: "0.875rem",
+                color: "var(--text-muted)",
+                fontStyle: "italic",
+                textAlign: "center",
+                padding: "24px 0",
+              }}
+            >
+              No subjects found
+            </p>
+          ) : (
+            <div style={{ maxHeight: 280, overflowY: "auto" }}>
+              {subjects.map((s, i) => {
+                const avg = allSummaries[s.id]?.avg ?? 0;
+                const avgColor =
+                  avg >= 75
+                    ? "var(--accent-green)"
+                    : avg >= 60
+                      ? "var(--accent-amber)"
+                      : "var(--accent-red)";
+                const isLast = i === subjects.length - 1;
+                return (
+                  <div
+                    key={s.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "10px 0",
+                      borderBottom: isLast ? "none" : "1px solid var(--border)",
+                      transition: "background 150ms ease",
+                      borderRadius: 4,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "var(--accent-subtle)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
+                  >
+                    <div
+                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                    >
+                      <span
+                        style={{
+                          fontFamily: "var(--font-display)",
+                          fontWeight: 600,
+                          fontSize: "0.85rem",
+                          color: "var(--text-primary)",
+                        }}
+                      >
+                        {s.name}
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: "var(--font-body)",
+                          fontSize: "0.65rem",
+                          fontWeight: 600,
+                          letterSpacing: "0.05em",
+                          color: "var(--accent-blue)",
+                          background: "var(--accent-blue-bg)",
+                          border: "1px solid var(--accent-blue-border)",
+                          borderRadius: 999,
+                          padding: "1px 7px",
+                        }}
+                      >
+                        {s.code}
+                      </span>
+                    </div>
+                    <span
+                      style={{
+                        fontFamily: "var(--font-body)",
+                        fontWeight: 600,
+                        fontSize: "0.85rem",
+                        color: avgColor,
+                      }}
+                    >
+                      {avg}%
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+      </div>
+
+      {/* ── At-risk table (full width) ─────────────────────────────── */}
+      <AtRiskTable
+        attendanceSummaries={allSummaries}
+        allMarks={allMarksFlat}
+        students={students}
+        loading={loading}
+      />
+    </div>
+  );
+}
+
 // ── Main export ────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
@@ -677,7 +961,7 @@ export default function DashboardPage() {
   }
 
   if (role === "admin") {
-    return <ComingSoonStub title="Admin Dashboard" />;
+    return <AdminDashboard />;
   }
 
   return <StudentDashboard />;
