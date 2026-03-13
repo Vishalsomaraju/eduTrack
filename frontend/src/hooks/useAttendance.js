@@ -169,6 +169,56 @@ export function useAttendance() {
     return { data: records, error: null };
   }
 
+  // ── fetchAttendanceTrend ───────────────────────────────────────
+  // Returns daily attendance percentage for the last 30 days, sorted
+  // ascending by date. Groups rows in JS; Supabase does the date filter.
+  // Returns: [{ date, percentage }]
+  async function fetchAttendanceTrend() {
+    const today = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+    const fromDate = thirtyDaysAgo.toISOString().split("T")[0];
+
+    const { data, error } = await supabase
+      .from("attendance")
+      .select("date, status")
+      .gte("date", fromDate)
+      .order("date", { ascending: true });
+
+    if (error) return { data: null, error };
+
+    const dateMap = {};
+    for (const row of data ?? []) {
+      if (!dateMap[row.date]) {
+        dateMap[row.date] = { total: 0, present: 0 };
+      }
+      dateMap[row.date].total++;
+      if (row.status === "present" || row.status === "late") {
+        dateMap[row.date].present++;
+      }
+    }
+
+    const trend = Object.entries(dateMap)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, { total, present }]) => ({
+        date,
+        percentage: total > 0 ? Math.round((present / total) * 100) : 0,
+      }));
+
+    return { data: trend, error: null };
+  }
+
+  // ── fetchAllProfiles ───────────────────────────────────────────
+  // Admin only — returns every profile in the system sorted by name.
+  // Used to derive totalStudents, totalFaculty for admin dashboard.
+  async function fetchAllProfiles() {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, name, email, role, avatar_url")
+      .order("name", { ascending: true });
+    return { data, error };
+  }
+
   // ── subscribeToAttendance ──────────────────────────────────────
   // Opens a Realtime channel for a subject. Returns the channel so
   // the caller can clean it up with unsubscribe().
@@ -205,6 +255,8 @@ export function useAttendance() {
     fetchAttendanceSummary,
     fetchStudentAttendance,
     fetchRecentActivity,
+    fetchAttendanceTrend,
+    fetchAllProfiles,
     subscribeToAttendance,
     unsubscribe,
   };
