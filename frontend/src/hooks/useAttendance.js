@@ -208,6 +208,25 @@ export function useAttendance() {
     return { data: trend, error: null };
   }
 
+  // ── fetchMyAttendanceHistory ───────────────────────────────────
+  // Student only — full attendance history across all subjects, sorted
+  // by date ascending. Used by AnalyticsPage to build personal heatmap.
+  // Returns: [{ date, status, subject_name }]
+  async function fetchMyAttendanceHistory(studentId) {
+    const { data, error } = await supabase
+      .from("attendance")
+      .select("date, status, subjects!subject_id(name)")
+      .eq("student_id", studentId)
+      .order("date", { ascending: true });
+    if (error) return { data: null, error };
+    const records = (data ?? []).map((r) => ({
+      date: r.date,
+      status: r.status,
+      subject_name: r.subjects?.name ?? "—",
+    }));
+    return { data: records, error: null };
+  }
+
   // ── fetchAllProfiles ───────────────────────────────────────────
   // Admin only — returns every profile in the system sorted by name.
   // Used to derive totalStudents, totalFaculty for admin dashboard.
@@ -256,6 +275,7 @@ export function useAttendance() {
     fetchStudentAttendance,
     fetchRecentActivity,
     fetchAttendanceTrend,
+    fetchMyAttendanceHistory,
     fetchAllProfiles,
     subscribeToAttendance,
     unsubscribe,
