@@ -5,6 +5,7 @@ import LoginPage from "@/pages/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
 import AttendancePage from "@/pages/AttendancePage";
 import MarksPage from "@/pages/MarksPage";
+import AnalyticsPage from "@/pages/AnalyticsPage";
 import ProtectedRoute from "@/components/layout/ProtectedRoute";
 import PageShell from "@/components/layout/PageShell";
 
@@ -78,9 +79,9 @@ function AppContent() {
       <Route
         path="/analytics"
         element={
-          <ProtectedRoute allowedRoles={["admin", "faculty"]}>
+          <ProtectedRoute>
             <PageShell>
-              <StubPage title="Analytics" />
+              <AnalyticsPage />
             </PageShell>
           </ProtectedRoute>
         }
