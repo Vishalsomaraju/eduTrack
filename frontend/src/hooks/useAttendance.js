@@ -150,6 +150,25 @@ export function useAttendance() {
     return { data, error };
   }
 
+  // ── fetchRecentActivity ────────────────────────────────────────
+  // Returns last 10 attendance records for a student across all
+  // subjects, sorted by date desc. Used by the student dashboard.
+  async function fetchRecentActivity(studentId) {
+    const { data, error } = await supabase
+      .from("attendance")
+      .select("date, status, subjects!subject_id(name)")
+      .eq("student_id", studentId)
+      .order("date", { ascending: false })
+      .limit(10);
+    if (error) return { data: null, error };
+    const records = (data ?? []).map((r) => ({
+      date: r.date,
+      status: r.status,
+      subject_name: r.subjects?.name ?? "—",
+    }));
+    return { data: records, error: null };
+  }
+
   // ── subscribeToAttendance ──────────────────────────────────────
   // Opens a Realtime channel for a subject. Returns the channel so
   // the caller can clean it up with unsubscribe().
@@ -185,6 +204,7 @@ export function useAttendance() {
     markAttendance,
     fetchAttendanceSummary,
     fetchStudentAttendance,
+    fetchRecentActivity,
     subscribeToAttendance,
     unsubscribe,
   };
