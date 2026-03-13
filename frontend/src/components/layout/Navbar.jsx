@@ -1,6 +1,7 @@
 import { useLocation } from "react-router-dom";
-import { Bell, Menu } from "lucide-react";
+import { Bell, Menu, Moon, Sun } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
+import { useTheme } from "@/hooks/useTheme";
 
 const ROUTE_TITLES = {
   "/dashboard": "Dashboard",
@@ -62,6 +63,7 @@ function Avatar({ profile, size = 32 }) {
 export default function Navbar({ onMenuClick }) {
   const location = useLocation();
   const { profile } = useAuthStore();
+  const { theme, toggleTheme } = useTheme();
   const title = ROUTE_TITLES[location.pathname] ?? "EduTrack";
 
   return (
@@ -116,8 +118,32 @@ export default function Navbar({ onMenuClick }) {
         </h1>
       </div>
 
-      {/* Right: bell + avatar */}
+      {/* Right: theme toggle + bell + avatar */}
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <button
+          onClick={toggleTheme}
+          aria-label="Toggle theme"
+          style={{
+            background: "none",
+            border: "1px solid var(--border)",
+            borderRadius: "8px",
+            padding: "6px 8px",
+            cursor: "pointer",
+            color: "var(--text-muted)",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            transition: "all 150ms ease",
+          }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.color = "var(--text-primary)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.color = "var(--text-muted)")
+          }
+        >
+          {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
         <button
           aria-label="Notifications"
           style={{

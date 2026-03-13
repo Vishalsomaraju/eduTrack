@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { Moon, Sun } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/hooks/useTheme";
 import { Input, Button } from "@/components/ui";
 
 function EyeIcon({ open }) {
@@ -48,6 +50,7 @@ export default function LoginPage() {
 
   const error = useAuthStore((s) => s.error);
   const { signIn } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -63,8 +66,39 @@ export default function LoginPage() {
         display: "flex",
         minHeight: "100vh",
         background: "var(--bg-base)",
+        position: "relative",
       }}
     >
+      {/* Theme toggle — top right corner */}
+      <button
+        onClick={toggleTheme}
+        aria-label="Toggle theme"
+        style={{
+          position: "absolute",
+          top: 16,
+          right: 16,
+          background: "none",
+          border: "1px solid var(--border)",
+          borderRadius: "8px",
+          padding: "6px 8px",
+          cursor: "pointer",
+          color: "var(--text-muted)",
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+          transition: "all 150ms ease",
+          zIndex: 10,
+        }}
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.color = "var(--text-primary)")
+        }
+        onMouseLeave={(e) =>
+          (e.currentTarget.style.color = "var(--text-muted)")
+        }
+      >
+        {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+      </button>
+
       {/* ── Left decorative panel (hidden on mobile) ── */}
       <div
         style={{
@@ -285,7 +319,7 @@ export default function LoginPage() {
               </div>
             )}
 
-            <div style={{ marginTop: "0.6rem" }}>
+            <div style={{ marginTop: "0.5rem" }}>
               <Button
                 type="submit"
                 variant="primary"
