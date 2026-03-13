@@ -1,6 +1,7 @@
 // DashboardPage.jsx — Role-aware dashboard.
 // Student view: full personal dashboard with stats, rings, marks card, and activity.
-// Faculty/Admin: "coming soon" stubs (built next month).
+// Faculty view: subject overview, quick attendance, grade distribution.
+// Admin: "coming soon" stub (built next sprint).
 
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -8,6 +9,7 @@ import {
   BookOpen,
   CalendarCheck,
   ClipboardList,
+  Users,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useAttendance } from "@/hooks/useAttendance";
@@ -18,6 +20,10 @@ import AttendanceRing from "@/components/dashboard/AttendanceRing";
 import AtRiskBanner from "@/components/dashboard/AtRiskBanner";
 import RecentActivity from "@/components/dashboard/RecentActivity";
 import StudentMarksCard from "@/components/marks/StudentMarksCard";
+import SubjectCard from "@/components/dashboard/SubjectCard";
+import QuickMarkAttendance from "@/components/dashboard/QuickMarkAttendance";
+import ClassPerformance from "@/components/dashboard/ClassPerformance";
+import AttendanceSummary from "@/components/attendance/AttendanceSummary";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -366,13 +372,308 @@ function StudentDashboard() {
   );
 }
 
+// ── Subject card skeleton (used in faculty loading state) ──────────────────
+
+function SubjectCardSkeleton() {
+  const shimmer = {
+    background:
+      "linear-gradient(90deg, var(--bg-elevated) 0%, rgba(255,255,255,0.04) 50%, var(--bg-elevated) 100%)",
+    backgroundSize: "200% 100%",
+    animation: "shimmer 1.5s infinite",
+    borderRadius: 4,
+  };
+  return (
+    <div
+      style={{
+        background: "var(--bg-surface)",
+        border: "1px solid var(--border)",
+        borderRadius: 14,
+        padding: 20,
+      }}
+    >
+      <div
+        style={{ display: "flex", justifyContent: "space-between", gap: 12 }}
+      >
+        <div style={{ flex: 1 }}>
+          <div
+            style={{
+              ...shimmer,
+              height: 22,
+              width: 60,
+              borderRadius: 999,
+              marginBottom: 10,
+            }}
+          />
+          <div
+            style={{ ...shimmer, height: 18, width: "80%", marginBottom: 6 }}
+          />
+          <div style={{ ...shimmer, height: 14, width: "50%" }} />
+        </div>
+        <div
+          style={{ ...shimmer, width: 80, height: 80, borderRadius: "50%" }}
+        />
+      </div>
+      <div style={{ ...shimmer, height: 1, margin: "12px 0" }} />
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <div style={{ ...shimmer, height: 14, width: 90 }} />
+        <div style={{ ...shimmer, height: 14, width: 70 }} />
+      </div>
+    </div>
+  );
+}
+
+// ── Faculty dashboard ───────────────────────────────────────────────────────
+
+function FacultyDashboard() {
+  const { user, profile } = useAuthStore();
+  const {
+    fetchSubjects,
+    fetchAttendanceSummary,
+    fetchStudentsForSubject,
+  } = useAttendance();
+
+  const [subjects, setSubjects] = useState([]);
+  const [perSubjectStats, setPerSubjectStats] = useState({});
+  const [totalStudents, setTotalStudents] = useState(0);
+  const [totalAtRisk, setTotalAtRisk] = useState(0);
+  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const overallAvgAttendance = useMemo(() => {
+    const vals = subjects.map((s) => perSubjectStats[s.id]?.avg ?? 0);
+    if (vals.length === 0) return 0;
+    return Math.round(vals.reduce((sum, v) => sum + v, 0) / vals.length);
+  }, [subjects, perSubjectStats]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    async function load() {
+      const subjectsResult = await fetchSubjects();
+      const subs = subjectsResult.data ?? [];
+      setSubjects(subs);
+
+      if (subs.length === 0) {
+        setLoading(false);
+        return;
+      }
+
+      // Parallel: per-subject summaries + enrolled student lists
+      const [summaryResults, studentResults] = await Promise.all([
+        Promise.all(subs.map((s) => fetchAttendanceSummary(s.id))),
+        Promise.all(subs.map((s) => fetchStudentsForSubject(s.id))),
+      ]);
+
+      const stats = {};
+      const allStudentIds = new Set();
+      const atRiskIds = new Set();
+
+      subs.forEach((s, i) => {
+        const summary = summaryResults[i].data ?? [];
+        const students = studentResults[i].data ?? [];
+
+        const avg =
+          summary.length > 0
+            ? Math.round(
+                summary.reduce((sum, st) => sum + st.percentage, 0) /
+                  summary.length,
+              )
+            : 0;
+        const atRisk = summary.filter((st) => st.atRisk).length;
+
+        students.forEach((st) => allStudentIds.add(st.id));
+        summary.filter((st) => st.atRisk).forEach((st) => atRiskIds.add(st.id));
+
+        stats[s.id] = { avg, count: students.length, atRisk };
+      });
+
+      setPerSubjectStats(stats);
+      setTotalStudents(allStudentIds.size);
+      setTotalAtRisk(atRiskIds.size);
+      setSelectedSubject(subs[0]);
+      setLoading(false);
+    }
+
+    load();
+  }, [user?.id]);
+
+  const firstName = profile?.name?.split(" ")[0] ?? "there";
+  const totalSubjects = subjects.length;
+
+  return (
+    <div style={{ padding: 24 }}>
+      {/* ── Greeting ──────────────────────────────────────────────── */}
+      <div style={{ marginBottom: 24 }}>
+        <h1
+          style={{
+            fontFamily: "var(--font-display)",
+            fontWeight: 700,
+            fontSize: "1.5rem",
+            color: "var(--text-primary)",
+            margin: 0,
+            letterSpacing: "-0.02em",
+          }}
+        >
+          {getGreeting()}, {firstName} 👋
+        </h1>
+        <p
+          style={{
+            fontFamily: "var(--font-body)",
+            fontWeight: 400,
+            fontSize: "0.9rem",
+            color: "var(--text-muted)",
+            margin: "4px 0 0",
+          }}
+        >
+          {getFormattedDate()}
+        </p>
+      </div>
+
+      {/* ── Stats row ─────────────────────────────────────────────── */}
+      <div
+        className="grid grid-cols-2 md:grid-cols-4 gap-4"
+        style={{ marginBottom: 24 }}
+      >
+        <StatCard
+          label="My Subjects"
+          value={loading ? "—" : totalSubjects}
+          sub="assigned this semester"
+          icon={BookOpen}
+          color="blue"
+          loading={loading}
+        />
+        <StatCard
+          label="Total Students"
+          value={loading ? "—" : totalStudents}
+          sub="across all subjects"
+          icon={Users}
+          color="default"
+          loading={loading}
+        />
+        <StatCard
+          label="Avg Attendance"
+          value={loading ? "—" : `${overallAvgAttendance}%`}
+          sub="across all classes"
+          icon={CalendarCheck}
+          color={
+            loading ? "default" : overallAvgAttendance >= 75 ? "green" : "red"
+          }
+          trend={
+            loading
+              ? undefined
+              : {
+                  direction: overallAvgAttendance >= 75 ? "up" : "down",
+                  value:
+                    overallAvgAttendance >= 75
+                      ? "Healthy"
+                      : "Needs attention",
+                }
+          }
+          loading={loading}
+        />
+        <StatCard
+          label="At Risk Students"
+          value={loading ? "—" : totalAtRisk}
+          sub={
+            totalAtRisk > 0
+              ? "need immediate attention"
+              : "All students on track"
+          }
+          icon={AlertTriangle}
+          color={loading ? "default" : totalAtRisk > 0 ? "red" : "green"}
+          loading={loading}
+        />
+      </div>
+
+      {/* ── My Classes ────────────────────────────────────────────── */}
+      <h2
+        style={{
+          fontFamily: "var(--font-display)",
+          fontWeight: 700,
+          fontSize: "1rem",
+          color: "var(--text-primary)",
+          margin: "0 0 16px",
+        }}
+      >
+        My Classes
+      </h2>
+
+      {loading ? (
+        <div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+          style={{ marginBottom: 24 }}
+        >
+          {[0, 1, 2].map((i) => (
+            <SubjectCardSkeleton key={i} />
+          ))}
+        </div>
+      ) : subjects.length === 0 ? (
+        <p
+          style={{
+            fontFamily: "var(--font-body)",
+            fontSize: "0.875rem",
+            color: "var(--text-muted)",
+            fontStyle: "italic",
+            textAlign: "center",
+            padding: "24px 0",
+            marginBottom: 24,
+          }}
+        >
+          No subjects assigned
+        </p>
+      ) : (
+        <div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+          style={{ marginBottom: 24 }}
+        >
+          {subjects.map((s) => (
+            <SubjectCard
+              key={s.id}
+              subject={s}
+              attendanceAvg={perSubjectStats[s.id]?.avg ?? 0}
+              studentCount={perSubjectStats[s.id]?.count ?? 0}
+              atRiskCount={perSubjectStats[s.id]?.atRisk ?? 0}
+              onClick={() => setSelectedSubject(s)}
+              selected={selectedSubject?.id === s.id}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* ── Quick actions + performance (two column) ──────────────── */}
+      {!loading && subjects.length > 0 && (
+        <>
+          <div
+            className="grid grid-cols-1 lg:grid-cols-2 gap-4"
+            style={{ marginBottom: 16 }}
+          >
+            <QuickMarkAttendance subjects={subjects} />
+            <ClassPerformance
+              subjectId={selectedSubject?.id}
+              subjectName={selectedSubject?.name}
+            />
+          </div>
+
+          {/* ── Full-width attendance summary ───────────────────── */}
+          {selectedSubject && (
+            <AttendanceSummary
+              subjectId={selectedSubject.id}
+              subjectName={selectedSubject.name}
+            />
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 // ── Main export ────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
   const { role } = useAuthStore();
 
   if (role === "faculty") {
-    return <ComingSoonStub title="Faculty Dashboard" />;
+    return <FacultyDashboard />;
   }
 
   if (role === "admin") {
