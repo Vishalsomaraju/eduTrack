@@ -16,6 +16,8 @@ dist-ssr
 .env
 .env.production
 .env.staging
+.claude/
+CLAUDE.md
 CLAUDE.local.md
 .vercel
 
