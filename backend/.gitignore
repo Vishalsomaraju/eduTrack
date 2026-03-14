@@ -3,6 +3,7 @@
 .env.production
 .env.staging
 .claude/
+API_CONTRACT.md
 CLAUDE.md
 CLAUDE.local.md
 
