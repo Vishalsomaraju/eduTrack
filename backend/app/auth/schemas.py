@@ -1,11 +1,15 @@
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime
 
-class FacultyProfile(BaseModel):
+
+class UserProfile(BaseModel):
     id: str
     name: str
     email: str
     role: str
     avatar_url: Optional[str] = None
-    created_at: Optional[datetime] = None
+
+
+class VerifyResponse(BaseModel):
+    valid: bool
+    user: UserProfile
