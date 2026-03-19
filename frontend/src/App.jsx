@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuthStore } from "@/stores/authStore";
 import { useTheme } from "@/hooks/useTheme";
 import LoginPage from "@/pages/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
@@ -32,6 +33,13 @@ function StubPage({ title }) {
   );
 }
 
+function RootRedirect() {
+  const { user, loading } = useAuthStore()
+  if (loading) return null
+  if (user) return <Navigate to="/dashboard" replace />
+  return <Navigate to="/login" replace />
+}
+
 // ── AppContent — must be inside BrowserRouter so hooks work ───
 function AppContent() {
   // Session listener runs for the entire app lifetime
@@ -45,7 +53,7 @@ function AppContent() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
 
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<RootRedirect />} />
 
         <Route
           path="/dashboard"

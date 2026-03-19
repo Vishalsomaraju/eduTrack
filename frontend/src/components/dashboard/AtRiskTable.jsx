@@ -1,17 +1,7 @@
-// AtRiskTable.jsx — Institution-wide at-risk student table for admin dashboard.
-// At risk = attendance < 75% in any subject OR any mark < 40% of max score.
-//
-// Props:
-//   attendanceSummaries — { [subjectId]: { name, students: summaryArray, avg } }
-//   allMarks            — flat array of all mark records, each enriched with subjectName
-//   students            — [{ id, name, email }]
-//   loading             — bool
+// AtRiskTable.jsx
 
-import { useMemo } from "react";
 import { CheckCircle } from "lucide-react";
 import { Badge, Button, Card, EmptyState, Table } from "@/components/ui";
-
-// ── Avatar initials helper ───────────────────────────────────────────────────
 
 function initials(name) {
   return (name ?? "?")
@@ -20,8 +10,6 @@ function initials(name) {
     .map((w) => w[0]?.toUpperCase() ?? "")
     .join("");
 }
-
-// ── Table column definitions ─────────────────────────────────────────────────
 
 const COLUMNS = [
   {
@@ -73,10 +61,10 @@ const COLUMNS = [
     ),
   },
   {
-    key: "riskLevel",
-    label: "Risk Level",
+    key: "risk_reason",
+    label: "Risk Reason",
     render: (val) =>
-      val === "high" ? (
+      val === "both" ? (
         <Badge variant="red" dot>
           High Risk
         </Badge>
@@ -85,77 +73,39 @@ const COLUMNS = [
       ),
   },
   {
-    key: "attendanceIssues",
+    key: "attendance_percentage",
     label: "Attendance Issues",
-    render: (issues) => {
-      if (!issues || issues.length === 0) {
-        return (
-          <span
-            style={{
-              fontFamily: "var(--font-body)",
-              fontSize: "0.75rem",
-              color: "var(--text-muted)",
-            }}
-          >
-            —
-          </span>
-        );
+    render: (val) => {
+      if (val >= 75) {
+        return <span style={{ fontFamily: "var(--font-body)", fontSize: "0.75rem", color: "var(--text-muted)" }}>—</span>;
       }
       return (
         <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          {issues.map((issue, i) => (
-            <span
-              key={i}
-              style={{
-                fontFamily: "var(--font-body)",
-                fontSize: "0.75rem",
-                color: "var(--accent-red)",
-              }}
-            >
-              {issue.subjectName}: {issue.percentage}%
-            </span>
-          ))}
+          <span style={{ fontFamily: "var(--font-body)", fontSize: "0.75rem", color: "var(--accent-red)" }}>
+            Attendance: {val}%
+          </span>
         </div>
       );
     },
   },
   {
-    key: "marksIssues",
+    key: "marks_percentage",
     label: "Marks Issues",
-    render: (issues) => {
-      if (!issues || issues.length === 0) {
-        return (
-          <span
-            style={{
-              fontFamily: "var(--font-body)",
-              fontSize: "0.75rem",
-              color: "var(--text-muted)",
-            }}
-          >
-            —
-          </span>
-        );
+    render: (val) => {
+      if (val === null || val >= 40) {
+        return <span style={{ fontFamily: "var(--font-body)", fontSize: "0.75rem", color: "var(--text-muted)" }}>—</span>;
       }
       return (
         <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          {issues.map((issue, i) => (
-            <span
-              key={i}
-              style={{
-                fontFamily: "var(--font-body)",
-                fontSize: "0.75rem",
-                color: "var(--accent-red)",
-              }}
-            >
-              {issue.subjectName} ({issue.type}): {issue.score}/{issue.maxScore}
-            </span>
-          ))}
+          <span style={{ fontFamily: "var(--font-body)", fontSize: "0.75rem", color: "var(--accent-red)" }}>
+            Marks Avg: {val}%
+          </span>
         </div>
       );
     },
   },
   {
-    key: "id",
+    key: "student_id",
     label: "Action",
     render: () => (
       <Button variant="ghost" size="sm">
@@ -165,90 +115,11 @@ const COLUMNS = [
   },
 ];
 
-// ── Main component ───────────────────────────────────────────────────────────
-
 export default function AtRiskTable({
-  attendanceSummaries = {},
-  allMarks = [],
-  students = [],
+  data = [], // from API /analytics/at-risk
   loading = false,
 }) {
-  // Derive at-risk student records
-  const atRiskRows = useMemo(() => {
-    // Collect all at-risk student IDs from attendance and marks
-    const atRiskIds = new Set();
-
-    Object.values(attendanceSummaries).forEach(({ students: sums = [] }) => {
-      sums.filter((s) => s.atRisk).forEach((s) => atRiskIds.add(s.id));
-    });
-
-    allMarks.forEach((m) => {
-      if (m.max_score > 0 && m.score / m.max_score < 0.4) {
-        atRiskIds.add(m.student_id);
-      }
-    });
-
-    // Build full row entries for each at-risk student
-    return students
-      .filter((s) => atRiskIds.has(s.id))
-      .map((student) => {
-        // Attendance issues for this student across all subjects
-        const attendanceIssues = [];
-        Object.values(attendanceSummaries).forEach(
-          ({ name: subjectName, students: sums = [] }) => {
-            const entry = sums.find((s) => s.id === student.id);
-            if (entry && entry.atRisk) {
-              attendanceIssues.push({
-                subjectName,
-                percentage: entry.percentage,
-              });
-            }
-          },
-        );
-
-        // Marks issues for this student
-        const marksIssues = allMarks
-          .filter(
-            (m) =>
-              m.student_id === student.id &&
-              m.max_score > 0 &&
-              m.score / m.max_score < 0.4,
-          )
-          .map((m) => ({
-            subjectName: m.subjectName ?? "—",
-            type: m.type,
-            score: m.score,
-            maxScore: m.max_score,
-          }));
-
-        // High risk: attendance < 60% in any subject OR mark < 25% of max score
-        const isHigh =
-          attendanceIssues.some((a) => a.percentage < 60) ||
-          allMarks.some(
-            (m) =>
-              m.student_id === student.id &&
-              m.max_score > 0 &&
-              m.score / m.max_score < 0.25,
-          );
-
-        return {
-          id: student.id,
-          name: student.name,
-          email: student.email,
-          riskLevel: isHigh ? "high" : "medium",
-          attendanceIssues,
-          marksIssues,
-        };
-      })
-      .sort((a, b) => {
-        // High risk first
-        if (a.riskLevel === "high" && b.riskLevel !== "high") return -1;
-        if (b.riskLevel === "high" && a.riskLevel !== "high") return 1;
-        return a.name.localeCompare(b.name);
-      });
-  }, [attendanceSummaries, allMarks, students]);
-
-  const count = atRiskRows.length;
+  const count = data.length;
 
   return (
     <Card
@@ -263,7 +134,6 @@ export default function AtRiskTable({
         )
       }
     >
-      {/* Empty state — no at-risk students */}
       {!loading && count === 0 ? (
         <EmptyState
           icon={CheckCircle}
@@ -273,7 +143,7 @@ export default function AtRiskTable({
       ) : (
         <Table
           columns={COLUMNS}
-          data={atRiskRows}
+          data={data}
           loading={loading}
           emptyMessage="No at-risk students"
         />

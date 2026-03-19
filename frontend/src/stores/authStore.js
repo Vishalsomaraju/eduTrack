@@ -7,12 +7,10 @@ export const useAuthStore = create((set) => ({
   loading: true, // true until first session check resolves
   error: null,
 
-  setUser: (user) => set({ user }),
-  setProfile: (profile) => set({ profile, role: profile?.role ?? null }),
-  setLoading: (loading) => set({ loading }),
-  setError: (error) => set({ error }),
+  setUser: ({ user, profile, role }) =>
+    set({ user, profile, role, loading: false, error: null }),
   clearUser: () =>
     set({ user: null, profile: null, role: null, loading: false, error: null }),
-  reset: () =>
-    set({ user: null, profile: null, role: null, loading: false, error: null }),
+  setLoading: (loading) => set({ loading }),
+  setError: (error) => set({ error }),
 }));

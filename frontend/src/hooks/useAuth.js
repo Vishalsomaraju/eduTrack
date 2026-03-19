@@ -1,80 +1,104 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/stores/authStore";
-
-async function fetchProfile(userId) {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id, name, role, email, avatar_url, created_at")
-    .eq("id", userId)
-    .single();
-  if (error) return null;
-  return data;
-}
+import api from "@/lib/api";
 
 export function useAuth() {
-  const { setUser, setProfile, setLoading, setError, clearUser } =
-    useAuthStore();
-  const navigate = useNavigate();
+  const { setUser, clearUser, setLoading } = useAuthStore();
 
   useEffect(() => {
-    // Check existing session on mount
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        setUser(session.user);
-        const profile = await fetchProfile(session.user.id);
-        setProfile(profile);
-      }
-      setLoading(false);
-    });
+    // Step 1 — check existing session on mount
+    const initAuth = async () => {
+      setLoading(true);
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-    // Subscribe to auth state changes for the entire app lifetime
+        if (session?.access_token) {
+          try {
+            const profile = await api.get("/auth/me");
+            setUser({
+              user: session.user,
+              profile,
+              role: profile.role,
+            });
+          } catch (err) {
+            // Token exists but /auth/me failed
+            // Clear session to force re-login
+            console.error("Profile fetch failed:", err);
+            await supabase.auth.signOut();
+            clearUser();
+          }
+        } else {
+          // No session — just clear loading
+          clearUser();
+        }
+      } catch (err) {
+        console.error("Auth init failed:", err);
+        clearUser();
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initAuth();
+
+    // Step 2 — listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_OUT") {
-        useAuthStore.getState().clearUser();
-        return;
+      if (event === "SIGNED_IN" && session) {
+        setLoading(true);
+        try {
+          const profile = await api.get("/auth/me");
+          setUser({
+            user: session.user,
+            profile,
+            role: profile.role,
+          });
+        } catch (err) {
+          console.error("Profile fetch on sign in failed:", err);
+          clearUser();
+        } finally {
+          setLoading(false);
+        }
       }
 
-      if (session?.user) {
-        setUser(session.user);
-        const profile = await fetchProfile(session.user.id);
-        setProfile(profile);
-      } else {
+      if (event === "SIGNED_OUT") {
         clearUser();
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
-  async function signIn(email, password) {
-    setError(null);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) {
-      setError(error.message);
-      return { error };
+  const signIn = async (email, password) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) {
+        setLoading(false);
+        return { error };
+      }
+      // onAuthStateChange handles the rest
+      return { error: null };
+    } catch (err) {
+      setLoading(false);
+      return { error: err };
     }
-    return { error: null };
-  }
+  };
 
-  async function signOut() {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      setError(error.message);
-      return { error };
-    }
-
+  const signOut = async () => {
+    setLoading(true);
+    await supabase.auth.signOut();
     clearUser();
-    navigate("/login");
-    return { error: null };
-  }
+    setLoading(false);
+  };
 
   return { signIn, signOut };
 }

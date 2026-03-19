@@ -1,12 +1,15 @@
-// AnalyticsPage.jsx — Role-aware analytics page.
-// Admin + faculty: institution/class deep view.
-// Student: personal academic analytics.
-
 import { useEffect, useMemo, useState } from "react";
 import { BookOpen, CalendarCheck, ClipboardList } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useAttendance } from "@/hooks/useAttendance";
 import { useMarks, computePercentage } from "@/hooks/useMarks";
+import {
+  fetchAttendanceTrend,
+  fetchGradeDistribution,
+  fetchAtRiskStudents,
+  fetchSubjectComparison,
+} from "@/hooks/useAnalytics";
+
 import AttendanceTrendChart from "@/components/dashboard/AttendanceTrendChart";
 import ClassPerformance from "@/components/dashboard/ClassPerformance";
 import AtRiskTable from "@/components/dashboard/AtRiskTable";
@@ -44,147 +47,58 @@ function FilterPill({ label, active, onClick }) {
 // ── Admin + Faculty View ──────────────────────────────────────────────────────
 
 function AdminFacultyAnalytics({ role }) {
-  const { fetchSubjects, fetchAttendanceSummary, fetchAttendanceTrend } =
-    useAttendance();
-  const { fetchMarks } = useMarks();
+  const { fetchSubjects } = useAttendance();
 
   const [loading, setLoading] = useState(true);
   const [subjects, setSubjects] = useState([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState(null);
-  const [marksTypeFilter, setMarksTypeFilter] = useState("all");
 
+  // Data states from unified analytics hooks
   const [trendData, setTrendData] = useState([]);
-  const [attendanceSummaries, setAttendanceSummaries] = useState({});
-  const [attendanceData, setAttendanceData] = useState({});
-  const [allMarksFlat, setAllMarksFlat] = useState([]);
-  const [marksData, setMarksData] = useState({});
-  const [allStudents, setAllStudents] = useState([]);
+  const [comparisonData, setComparisonData] = useState([]);
+  const [distributionData, setDistributionData] = useState([]);
+  const [atRiskData, setAtRiskData] = useState([]);
 
   useEffect(() => {
-    async function load() {
+    async function init() {
       setLoading(true);
-
-      // Phase 1: parallel subjects + trend
-      const [{ data: subs }, { data: trend }] = await Promise.all([
-        fetchSubjects(),
-        fetchAttendanceTrend(),
-      ]);
-
-      setTrendData(trend ?? []);
+      const { data: subs } = await fetchSubjects();
       const subjectList = subs ?? [];
       setSubjects(subjectList);
-
-      if (subjectList.length === 0) {
-        setLoading(false);
-        return;
+      if (subjectList.length > 0) {
+        setSelectedSubjectId(subjectList[0].id);
       }
-
-      // Phase 2: per-subject summaries + marks in parallel
-      const [summaryResults, marksResults] = await Promise.all([
-        Promise.all(subjectList.map((s) => fetchAttendanceSummary(s.id))),
-        Promise.all(subjectList.map((s) => fetchMarks(s.id))),
-      ]);
-
-      // Build attendance summaries map + avg data
-      const summaries = {};
-      const aData = {};
-      subjectList.forEach((s, i) => {
-        const sum = summaryResults[i].data ?? [];
-        const avg =
-          sum.length > 0
-            ? Math.round(
-                sum.reduce((acc, r) => acc + r.percentage, 0) / sum.length,
-              )
-            : 0;
-        summaries[s.id] = { name: s.name, students: sum, avg };
-        aData[s.id] = avg;
-      });
-      setAttendanceSummaries(summaries);
-      setAttendanceData(aData);
-
-      // Build flat marks array + per-subject average
-      const mData = {};
-      const flat = [];
-      subjectList.forEach((s, i) => {
-        const sMarks = marksResults[i].data ?? [];
-        const enriched = sMarks.map((m) => ({ ...m, subjectName: s.name }));
-        flat.push(...enriched);
-
-        // Per-student avg % for this subject
-        const byStudent = {};
-        for (const m of sMarks) {
-          if (!byStudent[m.student_id]) byStudent[m.student_id] = [];
-          if (m.max_score > 0) {
-            byStudent[m.student_id].push(
-              computePercentage(m.score, m.max_score),
-            );
-          }
-        }
-        const avgs = Object.values(byStudent)
-          .filter((p) => p.length > 0)
-          .map((p) => Math.round(p.reduce((a, b) => a + b, 0) / p.length));
-        mData[s.id] =
-          avgs.length > 0
-            ? Math.round(avgs.reduce((a, b) => a + b, 0) / avgs.length)
-            : 0;
-      });
-      setAllMarksFlat(flat);
-      setMarksData(mData);
-
-      // Build students list from summaries (name) + marks (email supplement)
-      const studentsMap = {};
-      subjectList.forEach((s, i) => {
-        const sum = summaryResults[i].data ?? [];
-        sum.forEach((r) => {
-          if (!studentsMap[r.id]) {
-            studentsMap[r.id] = { id: r.id, name: r.name, email: "" };
-          }
-        });
-      });
-      flat.forEach((m) => {
-        if (m.profiles?.name) {
-          if (!studentsMap[m.student_id]) {
-            studentsMap[m.student_id] = {
-              id: m.student_id,
-              name: m.profiles.name,
-              email: m.profiles.email ?? "",
-            };
-          } else if (!studentsMap[m.student_id].email) {
-            studentsMap[m.student_id].email = m.profiles.email ?? "";
-          }
-        }
-      });
-      setAllStudents(Object.values(studentsMap));
-
       setLoading(false);
     }
-    load();
+    init();
   }, []);
 
-  // Filtered data based on subject + marks type filter
-  const filteredMarks = useMemo(() => {
-    let marks = allMarksFlat;
-    if (selectedSubjectId) {
-      marks = marks.filter((m) => m.subject_id === selectedSubjectId);
-    }
-    if (marksTypeFilter !== "all") {
-      marks = marks.filter((m) => m.type === marksTypeFilter);
-    }
-    return marks;
-  }, [allMarksFlat, selectedSubjectId, marksTypeFilter]);
+  // Fetch subject comparison once
+  useEffect(() => {
+    fetchSubjectComparison().then(setComparisonData).catch(console.error);
+  }, []);
 
-  const filteredSummaries = useMemo(() => {
-    if (!selectedSubjectId) return attendanceSummaries;
-    const sub = attendanceSummaries[selectedSubjectId];
-    return sub ? { [selectedSubjectId]: sub } : {};
-  }, [attendanceSummaries, selectedSubjectId]);
+  // Fetch subject-specific analytics when selectedSubjectId changes
+  useEffect(() => {
+    if (!selectedSubjectId) return;
+    setLoading(true);
 
-  const comparisonSubjects = selectedSubjectId
-    ? subjects.filter((s) => s.id === selectedSubjectId)
-    : subjects;
+    Promise.all([
+      fetchAttendanceTrend(selectedSubjectId),
+      fetchGradeDistribution(selectedSubjectId),
+      fetchAtRiskStudents(selectedSubjectId),
+    ])
+      .then(([trend, dist, risk]) => {
+        setTrendData(trend ?? []);
+        setDistributionData(dist ?? []);
+        setAtRiskData(risk ?? []);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [selectedSubjectId]);
 
   const selectedSubject =
-    subjects.find((s) => s.id === selectedSubjectId) ?? null;
+    subjects.find((s) => s.id === selectedSubjectId) ?? subjects[0];
 
   const headerSub =
     role === "faculty"
@@ -228,44 +142,14 @@ function AdminFacultyAnalytics({ role }) {
           flexWrap: "wrap",
         }}
       >
-        <FilterPill
-          label="All Subjects"
-          active={!selectedSubjectId}
-          onClick={() => setSelectedSubjectId(null)}
-        />
         {subjects.map((s) => (
           <FilterPill
             key={s.id}
             label={s.code}
             active={selectedSubjectId === s.id}
-            onClick={() =>
-              setSelectedSubjectId((id) => (id === s.id ? null : s.id))
-            }
+            onClick={() => setSelectedSubjectId(s.id)}
           />
         ))}
-        <div
-          style={{
-            width: 1,
-            height: 24,
-            background: "var(--border)",
-            margin: "0 4px",
-          }}
-        />
-        <FilterPill
-          label="All"
-          active={marksTypeFilter === "all"}
-          onClick={() => setMarksTypeFilter("all")}
-        />
-        <FilterPill
-          label="Internal"
-          active={marksTypeFilter === "internal"}
-          onClick={() => setMarksTypeFilter("internal")}
-        />
-        <FilterPill
-          label="Assignment"
-          active={marksTypeFilter === "assignment"}
-          onClick={() => setMarksTypeFilter("assignment")}
-        />
       </div>
 
       {/* Row 1: Trend + Subject Comparison */}
@@ -274,12 +158,7 @@ function AdminFacultyAnalytics({ role }) {
         style={{ marginBottom: 16 }}
       >
         <AttendanceTrendChart data={trendData} loading={loading} />
-        <SubjectComparisonChart
-          subjects={comparisonSubjects}
-          attendanceData={attendanceData}
-          marksData={marksData}
-          loading={loading}
-        />
+        <SubjectComparisonChart data={comparisonData} loading={!comparisonData.length} />
       </div>
 
       {/* Row 2: Grade Distribution + Class Performance */}
@@ -287,10 +166,10 @@ function AdminFacultyAnalytics({ role }) {
         className="grid grid-cols-1 lg:grid-cols-2 gap-4"
         style={{ marginBottom: 16 }}
       >
-        <MarksDistributionChart marksData={filteredMarks} loading={loading} />
+        <MarksDistributionChart data={distributionData} loading={loading} />
         <ClassPerformance
-          subjectId={selectedSubject?.id ?? subjects[0]?.id}
-          subjectName={selectedSubject?.name ?? subjects[0]?.name}
+          subjectId={selectedSubject?.id}
+          subjectName={selectedSubject?.name}
         />
       </div>
 
@@ -301,12 +180,7 @@ function AdminFacultyAnalytics({ role }) {
 
       {/* Row 4: At-Risk Table */}
       <div>
-        <AtRiskTable
-          attendanceSummaries={filteredSummaries}
-          allMarks={filteredMarks}
-          students={allStudents}
-          loading={loading}
-        />
+        <AtRiskTable data={atRiskData} loading={loading} />
       </div>
     </div>
   );
@@ -325,7 +199,7 @@ function StudentAnalytics() {
   const [selectedSubjectId, setSelectedSubjectId] = useState(null);
 
   const [myMarks, setMyMarks] = useState([]);
-  const [mySummaries, setMySummaries] = useState({}); // subjectId → summary row
+  const [mySummaries, setMySummaries] = useState({});
   const [personalHeatmap, setPersonalHeatmap] = useState([]);
 
   useEffect(() => {
@@ -333,19 +207,17 @@ function StudentAnalytics() {
     async function load() {
       setLoading(true);
 
-      // Phase 1: subjects + marks + attendance history in parallel
       const [{ data: subs }, { data: marksData }, { data: history }] =
         await Promise.all([
           fetchSubjects(),
           fetchAllMyMarks(),
-          fetchMyAttendanceHistory(user.id),
+          fetchMyAttendanceHistory(user.id), // No wait, student just needs history for heatmap
         ]);
 
       const subjectList = subs ?? [];
       setSubjects(subjectList);
       setMyMarks(marksData ?? []);
 
-      // Build personal heatmap from full history
       const dateMap = {};
       for (const row of history ?? []) {
         if (!dateMap[row.date]) dateMap[row.date] = { total: 0, present: 0 };
@@ -366,16 +238,13 @@ function StudentAnalytics() {
         setSelectedSubjectId(subjectList[0].id);
       }
 
-      // Phase 2: per-subject attendance summaries (filtered to this student)
       const summaryResults = await Promise.all(
         subjectList.map((s) => fetchAttendanceSummary(s.id, user.id)),
       );
 
       const summaries = {};
       subjectList.forEach((s, i) => {
-        const rows = summaryResults[i].data ?? [];
-        // For a single student, rows[0] is the summary
-        summaries[s.id] = rows[0] ?? null;
+        summaries[s.id] = summaryResults[i].data ?? null;
       });
       setMySummaries(summaries);
 
@@ -384,7 +253,6 @@ function StudentAnalytics() {
     load();
   }, [user?.id]);
 
-  // Derived stats
   const { overallAttendance, marksAvg } = useMemo(() => {
     const summaryRows = Object.values(mySummaries).filter(Boolean);
     const overallAttendance =
@@ -408,10 +276,10 @@ function StudentAnalytics() {
 
   const selectedSummary = mySummaries[selectedSubjectId] ?? null;
   const selectedSubject = subjects.find((s) => s.id === selectedSubjectId);
+  const myMarksDist = myMarks.length > 0 ? myMarks : [];
 
   return (
     <div>
-      {/* Page header */}
       <div style={{ marginBottom: 24 }}>
         <h2
           style={{
@@ -436,7 +304,6 @@ function StudentAnalytics() {
         </p>
       </div>
 
-      {/* Stats row: 3 StatCards */}
       <div
         className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
         style={{ marginBottom: 24 }}
@@ -474,12 +341,10 @@ function StudentAnalytics() {
         />
       </div>
 
-      {/* Row 1: Subject selector + rings  |  Grade Distribution */}
       <div
         className="grid grid-cols-1 lg:grid-cols-2 gap-4"
         style={{ marginBottom: 16 }}
       >
-        {/* Subject selector + attendance ring */}
         <div
           style={{
             background: "var(--bg-surface)",
@@ -500,7 +365,6 @@ function StudentAnalytics() {
             Attendance by Subject
           </div>
 
-          {/* Subject pills */}
           <div
             style={{
               display: "flex",
@@ -534,7 +398,6 @@ function StudentAnalytics() {
                 ))}
           </div>
 
-          {/* Attendance ring + marks summary for selected subject */}
           {loading ? (
             <div
               style={{
@@ -636,11 +499,9 @@ function StudentAnalytics() {
           )}
         </div>
 
-        {/* Grade distribution */}
-        <MarksDistributionChart marksData={myMarks} loading={loading} />
+        <MarksDistributionChart marksData={myMarksDist} loading={loading} />
       </div>
 
-      {/* Row 2: Personal Attendance Heatmap */}
       <div>
         <AttendanceHeatmap data={personalHeatmap} loading={loading} />
       </div>

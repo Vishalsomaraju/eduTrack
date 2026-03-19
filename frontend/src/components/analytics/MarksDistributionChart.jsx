@@ -1,9 +1,5 @@
-// MarksDistributionChart.jsx — Pie/donut chart showing overall grade distribution
-// across all subjects and students.
-//
-// Props:
-//   marksData — flat array of all mark records
-//   loading   — bool
+// MarksDistributionChart.jsx
+// Pie/donut chart showing overall grade distribution
 
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
@@ -79,7 +75,8 @@ function CustomTooltip({ active, payload }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function MarksDistributionChart({
-  marksData = [],
+  marksData, // Student view raw marks array
+  data: apiData, // Admin/Faculty API data
   loading = false,
 }) {
   const css = getComputedStyle(document.documentElement);
@@ -88,10 +85,29 @@ export default function MarksDistributionChart({
   const amber = css.getPropertyValue("--accent-amber").trim();
   const red = css.getPropertyValue("--accent-red").trim();
 
-  // Derive grade distribution from flat marks array.
-  // Pivot by student → compute avg combined% → grade bucket.
-  const { chartData, uniqueStudents } = useMemo(() => {
-    // Group by student
+  // Derive grade distribution (fallback to manual computation for students)
+  const { chartData, uniqueStudents, allBuckets } = useMemo(() => {
+    if (apiData && apiData.length > 0) {
+      // Use API data (Admin/Faculty)
+      const buckets = { O: 0, "A+": 0, A: 0, "B+": 0, B: 0, F: 0 };
+      let totalStudents = 0;
+      apiData.forEach((d) => {
+        buckets[d.grade] = d.count;
+        totalStudents += d.count;
+      });
+      const data = GRADE_ORDER.filter((g) => buckets[g] > 0).map((g) => ({
+        name: g,
+        value: buckets[g],
+        total: totalStudents,
+      }));
+      return { chartData: data, uniqueStudents: totalStudents, allBuckets: buckets };
+    }
+
+    if (!marksData || marksData.length === 0) {
+      return { chartData: [], uniqueStudents: 0, allBuckets: { O: 0, "A+": 0, A: 0, "B+": 0, B: 0, F: 0 } };
+    }
+
+    // Manual student-level computation
     const studentMap = {};
     for (const m of marksData) {
       if (!studentMap[m.student_id]) {
@@ -107,9 +123,7 @@ export default function MarksDistributionChart({
       if (s.internal?.max_score > 0)
         pcts.push(computePercentage(s.internal.score, s.internal.max_score));
       if (s.assignment?.max_score > 0)
-        pcts.push(
-          computePercentage(s.assignment.score, s.assignment.max_score),
-        );
+        pcts.push(computePercentage(s.assignment.score, s.assignment.max_score));
       if (pcts.length === 0) return;
       const avg = Math.round(pcts.reduce((sum, p) => sum + p, 0) / pcts.length);
       buckets[computeGrade(avg)]++;
@@ -122,48 +136,13 @@ export default function MarksDistributionChart({
       total,
     }));
 
-    return { chartData: data, uniqueStudents: Object.keys(studentMap).length };
-  }, [marksData]);
+    return { chartData: data, uniqueStudents: Object.keys(studentMap).length, allBuckets: buckets };
+  }, [marksData, apiData]);
 
   const hasData = chartData.length > 0;
 
-  // Grade color map for legend dots
-  const GRADE_DOT_COLORS = {
-    O: green,
-    "A+": green,
-    A: blue,
-    "B+": blue,
-    B: amber,
-    F: red,
-  };
-
+  const GRADE_DOT_COLORS = { O: green, "A+": green, A: blue, "B+": blue, B: amber, F: red };
   const GRADE_OPACITIES = { O: 1, "A+": 0.7, A: 1, "B+": 0.7, B: 1, F: 1 };
-
-  // All grade buckets for legend (even zero-count)
-  const allBuckets = useMemo(() => {
-    const studentMap = {};
-    for (const m of marksData) {
-      if (!studentMap[m.student_id]) {
-        studentMap[m.student_id] = { internal: null, assignment: null };
-      }
-      if (m.type === "internal") studentMap[m.student_id].internal = m;
-      else if (m.type === "assignment") studentMap[m.student_id].assignment = m;
-    }
-    const buckets = { O: 0, "A+": 0, A: 0, "B+": 0, B: 0, F: 0 };
-    Object.values(studentMap).forEach((s) => {
-      const pcts = [];
-      if (s.internal?.max_score > 0)
-        pcts.push(computePercentage(s.internal.score, s.internal.max_score));
-      if (s.assignment?.max_score > 0)
-        pcts.push(
-          computePercentage(s.assignment.score, s.assignment.max_score),
-        );
-      if (pcts.length === 0) return;
-      const avg = Math.round(pcts.reduce((sum, p) => sum + p, 0) / pcts.length);
-      buckets[computeGrade(avg)]++;
-    });
-    return buckets;
-  }, [marksData]);
 
   return (
     <Card
@@ -193,7 +172,6 @@ export default function MarksDistributionChart({
         </div>
       ) : (
         <>
-          {/* Donut chart with absolute center label */}
           <div className="w-full h-45 sm:h-60" style={{ position: "relative" }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -219,7 +197,6 @@ export default function MarksDistributionChart({
               </PieChart>
             </ResponsiveContainer>
 
-            {/* Center label */}
             <div
               style={{
                 position: "absolute",
@@ -254,7 +231,6 @@ export default function MarksDistributionChart({
             </div>
           </div>
 
-          {/* Legend — 2-column grid */}
           <div
             style={{
               display: "grid",

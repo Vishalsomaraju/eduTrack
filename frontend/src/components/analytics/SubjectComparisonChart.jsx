@@ -1,12 +1,4 @@
-// SubjectComparisonChart.jsx — Grouped bar chart comparing attendance vs marks
-// average across all subjects side by side.
-//
-// Props:
-//   subjects       — [{ id, name, code }]
-//   attendanceData — { [subjectId]: avgPercentage }
-//   marksData      — { [subjectId]: avgPercentage }
-//   loading        — bool
-
+// SubjectComparisonChart.jsx
 import {
   BarChart,
   Bar,
@@ -18,8 +10,6 @@ import {
   YAxis,
 } from "recharts";
 import { Card } from "@/components/ui";
-
-// ── Shimmer skeleton ──────────────────────────────────────────────────────────
 
 function ComparisonSkeleton() {
   return (
@@ -35,8 +25,6 @@ function ComparisonSkeleton() {
     />
   );
 }
-
-// ── Custom tooltip ────────────────────────────────────────────────────────────
 
 function CustomTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
@@ -67,12 +55,8 @@ function CustomTooltip({ active, payload }) {
   );
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
-
 export default function SubjectComparisonChart({
-  subjects = [],
-  attendanceData = {},
-  marksData = {},
+  data: apiData = [], // Data from API
   loading = false,
 }) {
   const style = getComputedStyle(document.documentElement);
@@ -82,11 +66,12 @@ export default function SubjectComparisonChart({
   const borderColor = style.getPropertyValue("--border").trim();
   const textMutedColor = style.getPropertyValue("--text-muted").trim();
 
-  const data = subjects.map((s) => ({
-    name: s.code,
-    fullName: s.name,
-    Attendance: attendanceData[s.id] ?? 0,
-    Marks: marksData[s.id] ?? 0,
+  // Map API data back to expected recharts format
+  const chartData = apiData.map((s) => ({
+    name: s.subject_code,
+    fullName: s.subject_name,
+    Attendance: s.avg_attendance,
+    Marks: s.avg_marks,
   }));
 
   const legend = (
@@ -138,7 +123,7 @@ export default function SubjectComparisonChart({
     <Card title="Subject Comparison" action={legend}>
       {loading ? (
         <ComparisonSkeleton />
-      ) : data.length === 0 ? (
+      ) : chartData.length === 0 ? (
         <div
           className="w-full h-45 sm:h-60"
           style={{
@@ -157,7 +142,7 @@ export default function SubjectComparisonChart({
         <div className="w-full h-45 sm:h-60">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={data}
+              data={chartData}
               margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
               barCategoryGap="30%"
               barGap={4}
