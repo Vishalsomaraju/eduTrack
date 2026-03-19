@@ -438,7 +438,7 @@ function StudentAnalytics() {
 
       {/* Stats row: 3 StatCards */}
       <div
-        className="grid grid-cols-1 md:grid-cols-3 gap-4"
+        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
         style={{ marginBottom: 24 }}
       >
         <StatCard

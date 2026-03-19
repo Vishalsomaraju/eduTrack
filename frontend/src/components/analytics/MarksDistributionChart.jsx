@@ -17,11 +17,11 @@ const GRADE_ORDER = ["O", "A+", "A", "B+", "B", "F"];
 function DonutSkeleton() {
   return (
     <div
+      className="w-full h-45 sm:h-60"
       style={{
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        height: 240,
       }}
     >
       <div style={{ position: "relative", width: 180, height: 180 }}>
@@ -178,8 +178,8 @@ export default function MarksDistributionChart({
         <DonutSkeleton />
       ) : !hasData ? (
         <div
+          className="w-full h-45 sm:h-60"
           style={{
-            height: 240,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -194,8 +194,8 @@ export default function MarksDistributionChart({
       ) : (
         <>
           {/* Donut chart with absolute center label */}
-          <div style={{ position: "relative" }}>
-            <ResponsiveContainer width="100%" height={240}>
+          <div className="w-full h-45 sm:h-60" style={{ position: "relative" }}>
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={chartData}

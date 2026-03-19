@@ -24,8 +24,8 @@ import { Card } from "@/components/ui";
 function ComparisonSkeleton() {
   return (
     <div
+      className="w-full h-45 sm:h-60"
       style={{
-        height: 260,
         borderRadius: 8,
         background:
           "linear-gradient(90deg, var(--bg-elevated) 0%, rgba(255,255,255,0.04) 50%, var(--bg-elevated) 100%)",
@@ -140,8 +140,8 @@ export default function SubjectComparisonChart({
         <ComparisonSkeleton />
       ) : data.length === 0 ? (
         <div
+          className="w-full h-45 sm:h-60"
           style={{
-            height: 260,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -154,57 +154,63 @@ export default function SubjectComparisonChart({
           No subject data available
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={260}>
-          <BarChart
-            data={data}
-            margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
-            barCategoryGap="30%"
-            barGap={4}
-          >
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke={borderColor}
-              vertical={false}
-            />
-            <XAxis
-              dataKey="name"
-              tick={{
-                fontFamily: "var(--font-body)",
-                fontSize: 12,
-                fill: textMutedColor,
-              }}
-              tickLine={false}
-              axisLine={false}
-            />
-            <YAxis
-              domain={[0, 100]}
-              tickFormatter={(v) => v + "%"}
-              tick={{
-                fontFamily: "var(--font-body)",
-                fontSize: 11,
-                fill: textMutedColor,
-              }}
-              tickLine={false}
-              axisLine={false}
-              width={36}
-            />
-            <Tooltip
-              content={<CustomTooltip />}
-              cursor={{ fill: "rgba(255,255,255,0.03)" }}
-            />
-            <ReferenceLine
-              y={75}
-              stroke={accentRedColor}
-              strokeDasharray="4 4"
-            />
-            <Bar
-              dataKey="Attendance"
-              fill={accentColor}
-              radius={[4, 4, 0, 0]}
-            />
-            <Bar dataKey="Marks" fill={accentBlueColor} radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+        <div className="w-full h-45 sm:h-60">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={data}
+              margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
+              barCategoryGap="30%"
+              barGap={4}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke={borderColor}
+                vertical={false}
+              />
+              <XAxis
+                dataKey="name"
+                tick={{
+                  fontFamily: "var(--font-body)",
+                  fontSize: 12,
+                  fill: textMutedColor,
+                }}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                domain={[0, 100]}
+                tickFormatter={(v) => v + "%"}
+                tick={{
+                  fontFamily: "var(--font-body)",
+                  fontSize: 11,
+                  fill: textMutedColor,
+                }}
+                tickLine={false}
+                axisLine={false}
+                width={36}
+              />
+              <Tooltip
+                content={<CustomTooltip />}
+                cursor={{ fill: "rgba(255,255,255,0.03)" }}
+              />
+              <ReferenceLine
+                y={75}
+                stroke={accentRedColor}
+                strokeDasharray="4 4"
+              />
+              <Bar
+                dataKey="Attendance"
+                fill={accentColor}
+                radius={[4, 4, 0, 0]}
+              />
+              <Bar
+                dataKey="Marks"
+                fill={accentBlueColor}
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       )}
     </Card>
   );

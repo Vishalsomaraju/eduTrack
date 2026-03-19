@@ -343,6 +343,7 @@ export default function AttendanceMarker() {
       >
         {/* ── Top controls row ── */}
         <div
+          className="flex flex-col sm:flex-row"
           style={{
             display: "flex",
             gap: 12,
@@ -351,7 +352,7 @@ export default function AttendanceMarker() {
             marginBottom: 20,
           }}
         >
-          <div style={{ flex: "1 1 180px" }}>
+          <div className="w-full sm:w-auto" style={{ flex: "1 1 180px" }}>
             <SubjectSelect
               subjects={subjects}
               value={selectedSubject}
@@ -362,7 +363,7 @@ export default function AttendanceMarker() {
             />
           </div>
 
-          <div style={{ flex: "1 1 150px" }}>
+          <div className="w-full sm:w-auto" style={{ flex: "1 1 150px" }}>
             <Input
               label="Date"
               type="date"
@@ -374,8 +375,9 @@ export default function AttendanceMarker() {
             />
           </div>
 
-          <div style={{ flexShrink: 0 }}>
+          <div className="w-full sm:w-auto" style={{ flexShrink: 0 }}>
             <Button
+              className="w-full sm:w-auto min-h-11"
               variant="primary"
               onClick={handleLoadStudents}
               loading={loadingStudents}

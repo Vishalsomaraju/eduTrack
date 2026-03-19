@@ -33,11 +33,11 @@ function SkeletonBars() {
   const heights = [60, 140, 100, 120, 80, 40];
   return (
     <div
+      className="w-full h-45 sm:h-60"
       style={{
         display: "flex",
         alignItems: "flex-end",
         gap: 12,
-        height: 200,
         padding: "0 8px",
       }}
     >
@@ -140,11 +140,11 @@ export default function ClassPerformance({ subjectId, subjectName }) {
         <SkeletonBars />
       ) : !hasData ? (
         <div
+          className="w-full h-45 sm:h-60"
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            height: 200,
             fontFamily: "var(--font-body)",
             fontSize: "0.875rem",
             color: "var(--text-muted)",
@@ -154,29 +154,31 @@ export default function ClassPerformance({ subjectId, subjectName }) {
           No marks entered yet
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={chartData} barSize={36} barCategoryGap="30%">
-            <XAxis
-              dataKey="grade"
-              tick={{
-                fontFamily: "var(--font-body)",
-                fontSize: 12,
-                fill: "var(--text-muted)",
-              }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <Tooltip
-              cursor={{ fill: "rgba(255,255,255,0.03)" }}
-              content={<CustomTooltip />}
-            />
-            <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-              {chartData.map((entry) => (
-                <Cell key={entry.grade} fill={GRADE_COLORS[entry.grade]} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+        <div className="w-full h-45 sm:h-60">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} barSize={36} barCategoryGap="30%">
+              <XAxis
+                dataKey="grade"
+                tick={{
+                  fontFamily: "var(--font-body)",
+                  fontSize: 12,
+                  fill: "var(--text-muted)",
+                }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip
+                cursor={{ fill: "rgba(255,255,255,0.03)" }}
+                content={<CustomTooltip />}
+              />
+              <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                {chartData.map((entry) => (
+                  <Cell key={entry.grade} fill={GRADE_COLORS[entry.grade]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       )}
     </Card>
   );

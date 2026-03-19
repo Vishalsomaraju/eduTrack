@@ -23,8 +23,8 @@ import { Card } from "@/components/ui";
 function TrendSkeleton() {
   return (
     <div
+      className="w-full h-45 sm:h-60"
       style={{
-        height: 220,
         borderRadius: 8,
         background:
           "linear-gradient(90deg, var(--bg-elevated) 0%, rgba(255,255,255,0.04) 50%, var(--bg-elevated) 100%)",
@@ -100,8 +100,8 @@ export default function AttendanceTrendChart({ data = [], loading = false }) {
         <TrendSkeleton />
       ) : data.length === 0 ? (
         <div
+          className="w-full h-45 sm:h-60"
           style={{
-            height: 220,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -114,64 +114,66 @@ export default function AttendanceTrendChart({ data = [], loading = false }) {
           No attendance data in the last 30 days
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={220}>
-          <LineChart
-            data={data}
-            margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
-          >
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke={borderColor}
-              vertical={false}
-            />
-            <XAxis
-              dataKey="date"
-              tickFormatter={(d) => d.split("-")[2]}
-              tick={{
-                fontFamily: "var(--font-body)",
-                fontSize: 11,
-                fill: textMutedColor,
-              }}
-              tickLine={false}
-              axisLine={false}
-            />
-            <YAxis
-              domain={[0, 100]}
-              tickFormatter={(v) => v + "%"}
-              tick={{
-                fontFamily: "var(--font-body)",
-                fontSize: 11,
-                fill: textMutedColor,
-              }}
-              tickLine={false}
-              axisLine={false}
-              width={40}
-            />
-            <Tooltip
-              content={<CustomTooltip />}
-              cursor={{ stroke: borderColor, strokeWidth: 1 }}
-            />
-            <ReferenceLine
-              y={75}
-              stroke={accentRedColor}
-              strokeDasharray="4 4"
-              label={{
-                value: "75% min",
-                position: "insideTopRight",
-                fontSize: 11,
-                fill: accentRedColor,
-                fontFamily: "var(--font-body)",
-              }}
-            />
-            <Line
-              type="monotone"
-              dataKey="percentage"
-              stroke={accentColor}
-              strokeWidth={2}
-              dot={false}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        <div className="w-full h-45 sm:h-60">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={data}
+              margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke={borderColor}
+                vertical={false}
+              />
+              <XAxis
+                dataKey="date"
+                tickFormatter={(d) => d.split("-")[2]}
+                tick={{
+                  fontFamily: "var(--font-body)",
+                  fontSize: 11,
+                  fill: textMutedColor,
+                }}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                domain={[0, 100]}
+                tickFormatter={(v) => v + "%"}
+                tick={{
+                  fontFamily: "var(--font-body)",
+                  fontSize: 11,
+                  fill: textMutedColor,
+                }}
+                tickLine={false}
+                axisLine={false}
+                width={40}
+              />
+              <Tooltip
+                content={<CustomTooltip />}
+                cursor={{ stroke: borderColor, strokeWidth: 1 }}
+              />
+              <ReferenceLine
+                y={75}
+                stroke={accentRedColor}
+                strokeDasharray="4 4"
+                label={{
+                  value: "75% min",
+                  position: "insideTopRight",
+                  fontSize: 11,
+                  fill: accentRedColor,
+                  fontFamily: "var(--font-body)",
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="percentage"
+                stroke={accentColor}
+                strokeWidth={2}
+                dot={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       )}
     </Card>
   );

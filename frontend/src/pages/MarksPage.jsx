@@ -21,9 +21,11 @@ function SubjectSelector({ value, onChange, subjects, loading }) {
   if (loading) {
     return (
       <div
+        className="w-full sm:w-auto"
         style={{
           height: 42,
-          width: 280,
+          width: "100%",
+          maxWidth: 280,
           borderRadius: 10,
           background:
             "linear-gradient(90deg, var(--bg-elevated) 0%, rgba(255,255,255,0.04) 50%, var(--bg-elevated) 100%)",
@@ -51,6 +53,7 @@ function SubjectSelector({ value, onChange, subjects, loading }) {
 
   return (
     <select
+      className="w-full sm:w-auto"
       value={value}
       onChange={(e) => onChange(e.target.value)}
       style={{
@@ -64,7 +67,7 @@ function SubjectSelector({ value, onChange, subjects, loading }) {
         fontSize: "0.875rem",
         outline: "none",
         cursor: "pointer",
-        minWidth: 220,
+        width: "100%",
         boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2)",
       }}
     >

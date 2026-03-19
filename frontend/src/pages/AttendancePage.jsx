@@ -18,11 +18,11 @@ const ROLE_SUBTITLE = {
 function SubjectSelect({ subjects, value, onChange, label = "Subject" }) {
   return (
     <div
+      className="w-full sm:w-auto"
       style={{
         display: "flex",
         flexDirection: "column",
         gap: 6,
-        minWidth: 220,
       }}
     >
       <label
@@ -161,15 +161,7 @@ function StudentView({ subjects, userId }) {
       />
 
       {selectedSubject && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 1fr) minmax(0, 340px)",
-            gap: 20,
-            alignItems: "start",
-          }}
-          className="att-student-grid"
-        >
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
           <AttendanceSummary
             subjectId={selectedSubject}
             studentId={userId}
@@ -217,15 +209,6 @@ export default function AttendancePage() {
 
   return (
     <>
-      {/* Responsive override for student grid on mobile */}
-      <style>{`
-        @media (max-width: 767px) {
-          .att-student-grid {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
-
       {/* ── Page title ── */}
       <div style={{ marginBottom: 28 }}>
         <h1

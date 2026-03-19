@@ -371,6 +371,7 @@ export default function MarksEntry({ subjectId: propSubjectId }) {
     <Card title="Enter Marks">
       {/* ── Top controls row ─────────────────────────────────── */}
       <div
+        className="flex flex-col sm:flex-row"
         style={{
           display: "flex",
           flexWrap: "wrap",
@@ -386,14 +387,17 @@ export default function MarksEntry({ subjectId: propSubjectId }) {
             value={internalSubjectId}
             onChange={setInternalSubjectId}
             options={subjectOptions}
-            style={{ flex: "1 1 200px", minWidth: 180 }}
+            style={{ flex: "1 1 200px", width: "100%" }}
           />
         )}
 
         <TypeToggle value={markType} onChange={handleTypeChange} />
 
         {/* Max Score input */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <div
+          className="w-full sm:w-auto"
+          style={{ display: "flex", flexDirection: "column", gap: 6 }}
+        >
           <label
             style={{
               fontFamily: "var(--font-display)",
@@ -415,7 +419,8 @@ export default function MarksEntry({ subjectId: propSubjectId }) {
               setMaxScore(Number(e.target.value));
             }}
             style={{
-              width: 100,
+              width: "100%",
+              maxWidth: 120,
               height: 42,
               background: "var(--input-bg)",
               color: "var(--text-primary)",
@@ -431,6 +436,7 @@ export default function MarksEntry({ subjectId: propSubjectId }) {
         </div>
 
         <Button
+          className="w-full sm:w-auto min-h-11"
           variant="secondary"
           onClick={handleLoad}
           loading={loadingTable}
@@ -462,6 +468,7 @@ export default function MarksEntry({ subjectId: propSubjectId }) {
         <>
           {/* Bulk actions bar */}
           <div
+            className="flex flex-col sm:flex-row"
             style={{
               display: "flex",
               alignItems: "center",

@@ -62,12 +62,8 @@ export default function LoginPage() {
 
   return (
     <div
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        background: "var(--bg-base)",
-        position: "relative",
-      }}
+      className="min-h-screen w-full flex flex-col lg:flex-row relative"
+      style={{ background: "var(--bg-base)" }}
     >
       {/* Theme toggle — top right corner */}
       <button
@@ -99,18 +95,10 @@ export default function LoginPage() {
         {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
       </button>
 
-      {/* ── Left decorative panel (hidden on mobile) ── */}
+      {/* Left decorative panel — hidden below lg */}
       <div
-        style={{
-          display: "none",
-          position: "relative",
-          flex: "0 0 50%",
-          background: "var(--bg-sidebar)",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "3rem",
-        }}
-        className="md-panel"
+        className="hidden lg:flex lg:w-1/2 relative flex-col items-center justify-center p-8"
+        style={{ background: "var(--bg-elevated)" }}
       >
         {/* Center block */}
         <div
@@ -214,18 +202,12 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* ── Right form panel ── */}
+      {/* Right form panel — full width on mobile */}
       <div
-        style={{
-          flex: 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "2rem 1.5rem",
-          background: "var(--bg-base)",
-        }}
+        className="w-full lg:w-1/2 flex items-center justify-center min-h-screen p-4 sm:p-6 lg:p-8"
+        style={{ background: "var(--bg-base)" }}
       >
-        <div style={{ width: "100%", maxWidth: 360 }}>
+        <div className="w-full max-w-sm">
           {/* Form header */}
           <div style={{ marginBottom: "2rem" }}>
             <h2
@@ -327,6 +309,7 @@ export default function LoginPage() {
                 loading={submitting}
                 disabled={submitting}
                 size="lg"
+                className="min-h-11"
               >
                 Sign In
               </Button>
@@ -348,13 +331,6 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
-
-      {/* Responsive panel visibility via injected style */}
-      <style>{`
-        @media (min-width: 768px) {
-          .md-panel { display: flex !important; }
-        }
-      `}</style>
     </div>
   );
 }

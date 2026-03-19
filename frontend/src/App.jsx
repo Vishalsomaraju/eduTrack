@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
-import LandingPage from "@/pages/LandingPage";
+import LoginPage from "@/pages/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
 import AttendancePage from "@/pages/AttendancePage";
 import MarksPage from "@/pages/MarksPage";
@@ -39,9 +39,9 @@ function AppContent() {
 
   return (
     <Routes>
-      <Route path="/login" element={<LandingPage />} />
+      <Route path="/login" element={<LoginPage />} />
 
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<Navigate to="/login" replace />} />
 
       <Route
         path="/dashboard"

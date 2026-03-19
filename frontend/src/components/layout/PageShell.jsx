@@ -10,40 +10,21 @@ export default function PageShell({ children }) {
 
   return (
     <div
-      style={{
-        display: "flex",
-        height: "100vh",
-        overflow: "hidden",
-        background: "var(--bg-base)",
-      }}
+      className="flex h-screen w-full overflow-hidden"
+      style={{ background: "var(--bg-base)" }}
     >
-      <Sidebar
-        mobileOpen={mobileOpen}
-        onMobileClose={() => setMobileOpen(false)}
-      />
+      <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
 
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-          minWidth: 0,
-        }}
-      >
-        <Navbar onMenuClick={() => setMobileOpen(true)} />
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        <Navbar onMenuToggle={() => setMobileOpen((o) => !o)} />
 
         <motion.main
           key={location.pathname}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          style={{
-            flex: 1,
-            overflowY: "auto",
-            padding: 24,
-            background: "var(--bg-base)",
-          }}
+          className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 lg:p-6"
+          style={{ background: "var(--bg-base)" }}
         >
           {children}
         </motion.main>

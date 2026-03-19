@@ -51,7 +51,7 @@ export default function Input({
       height: "42px",
       borderRadius: "10px",
       fontFamily: "var(--font-body)",
-      fontSize: "0.9rem",
+      fontSize: "var(--text-base)",
       boxSizing: "border-box",
       outline: "none",
       paddingLeft: icon ? "40px" : "14px",
@@ -109,7 +109,9 @@ export default function Input({
         </label>
       )}
 
-      <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+      <div
+        style={{ position: "relative", display: "flex", alignItems: "center" }}
+      >
         {icon && (
           <span
             style={{
@@ -141,7 +143,7 @@ export default function Input({
             /* Placeholder color via inline style doesn't work cross-browser;
                handled via Tailwind placeholder utility below */
           }}
-          className="placeholder:text-[var(--text-muted)] placeholder:opacity-60"
+          className="placeholder:text-(--text-muted) placeholder:opacity-60"
           {...rest}
         />
 

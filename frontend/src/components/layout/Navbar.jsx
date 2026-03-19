@@ -60,7 +60,7 @@ function Avatar({ profile, size = 32 }) {
   );
 }
 
-export default function Navbar({ onMenuClick }) {
+export default function Navbar({ onMenuToggle }) {
   const location = useLocation();
   const { profile } = useAuthStore();
   const { theme, toggleTheme } = useTheme();
@@ -68,12 +68,8 @@ export default function Navbar({ onMenuClick }) {
 
   return (
     <header
+      className="h-14 flex items-center justify-between px-3 sm:px-4 lg:px-6"
       style={{
-        height: 56,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "0 24px",
         background: "var(--bg-surface)",
         borderBottom: "1px solid var(--border)",
         backdropFilter: "blur(12px)",
@@ -83,25 +79,23 @@ export default function Navbar({ onMenuClick }) {
         flexShrink: 0,
       }}
     >
-      {/* Left: hamburger (mobile) + page title */}
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <button
-          onClick={onMenuClick}
-          className="navbar-menu-btn"
-          aria-label="Open navigation"
+          className="lg:hidden p-2 rounded-md"
+          onClick={onMenuToggle}
+          aria-label="Toggle navigation"
           style={{
-            display: "none",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 36,
-            height: 36,
-            borderRadius: 8,
             background: "transparent",
             border: "none",
             cursor: "pointer",
             color: "var(--text-muted)",
-            padding: 0,
           }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.color = "var(--text-primary)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.color = "var(--text-muted)")
+          }
         >
           <Menu size={20} />
         </button>
@@ -118,7 +112,6 @@ export default function Navbar({ onMenuClick }) {
         </h1>
       </div>
 
-      {/* Right: theme toggle + bell + avatar */}
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <button
           onClick={toggleTheme}
@@ -171,13 +164,6 @@ export default function Navbar({ onMenuClick }) {
         </button>
         <Avatar profile={profile} size={32} />
       </div>
-
-      {/* Show hamburger only on mobile */}
-      <style>{`
-        @media (max-width: 767px) {
-          .navbar-menu-btn { display: flex !important; }
-        }
-      `}</style>
     </header>
   );
 }

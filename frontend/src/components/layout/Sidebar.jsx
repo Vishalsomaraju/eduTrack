@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -9,8 +9,6 @@ import {
   Users,
   GraduationCap,
   BookOpen,
-  ChevronLeft,
-  ChevronRight,
   Sun,
   Moon,
   LogOut,
@@ -19,7 +17,6 @@ import { useAuthStore } from "@/stores/authStore";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 
-// ── Nav structure ──────────────────────────────────────────
 const NAV_SECTIONS = [
   {
     label: null,
@@ -49,7 +46,6 @@ const NAV_SECTIONS = [
   },
 ];
 
-// ── Avatar helper ──────────────────────────────────────────
 function Avatar({ profile, size = 28 }) {
   if (profile?.avatar_url) {
     return (
@@ -97,8 +93,7 @@ function Avatar({ profile, size = 28 }) {
   );
 }
 
-// ── Single nav item ────────────────────────────────────────
-function NavItem({ item, collapsed, isActive, onClose }) {
+function NavItem({ item, compact, isActive, onClose }) {
   const [showTooltip, setShowTooltip] = useState(false);
   const Icon = item.icon;
 
@@ -107,14 +102,14 @@ function NavItem({ item, collapsed, isActive, onClose }) {
       <Link
         to={item.path}
         onClick={onClose}
-        onMouseEnter={() => collapsed && setShowTooltip(true)}
+        onMouseEnter={() => compact && setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
         style={{
           display: "flex",
           alignItems: "center",
           gap: 10,
           height: 40,
-          padding: collapsed ? "0 13px" : "0 10px",
+          padding: compact ? "0 13px" : "0 10px",
           borderRadius: 8,
           fontFamily: "var(--font-body)",
           fontWeight: isActive ? 600 : 500,
@@ -125,15 +120,15 @@ function NavItem({ item, collapsed, isActive, onClose }) {
           transition: "all 150ms ease",
           background: isActive ? "var(--accent-subtle)" : "transparent",
           boxShadow: isActive ? "inset 3px 0 0 var(--accent)" : "none",
-          justifyContent: collapsed ? "center" : "flex-start",
+          justifyContent: compact ? "center" : "flex-start",
           whiteSpace: "nowrap",
         }}
       >
         <Icon size={18} strokeWidth={1.75} style={{ flexShrink: 0 }} />
         <span
           style={{
-            opacity: collapsed ? 0 : 1,
-            width: collapsed ? 0 : "auto",
+            opacity: compact ? 0 : 1,
+            width: compact ? 0 : "auto",
             overflow: "hidden",
             transition: "opacity 150ms ease, width 150ms ease",
           }}
@@ -142,8 +137,7 @@ function NavItem({ item, collapsed, isActive, onClose }) {
         </span>
       </Link>
 
-      {/* Collapsed tooltip */}
-      {collapsed && showTooltip && (
+      {compact && showTooltip && (
         <div
           style={{
             position: "absolute",
@@ -169,8 +163,7 @@ function NavItem({ item, collapsed, isActive, onClose }) {
   );
 }
 
-// ── Main sidebar content ──────────────────────────────────
-function SidebarContent({ collapsed, onClose }) {
+function SidebarContent({ compact, onClose }) {
   const [showUserPopover, setShowUserPopover] = useState(false);
   const location = useLocation();
   const { profile, role } = useAuthStore();
@@ -189,7 +182,6 @@ function SidebarContent({ collapsed, onClose }) {
         overflow: "hidden",
       }}
     >
-      {/* ── Logo area ── */}
       <div
         style={{
           height: 64,
@@ -197,7 +189,7 @@ function SidebarContent({ collapsed, onClose }) {
           alignItems: "center",
           padding: "0 16px",
           gap: 10,
-          justifyContent: collapsed ? "center" : "flex-start",
+          justifyContent: compact ? "center" : "flex-start",
           flexShrink: 0,
         }}
       >
@@ -233,8 +225,8 @@ function SidebarContent({ collapsed, onClose }) {
             fontSize: "1rem",
             color: "var(--text-primary)",
             whiteSpace: "nowrap",
-            opacity: collapsed ? 0 : 1,
-            width: collapsed ? 0 : "auto",
+            opacity: compact ? 0 : 1,
+            width: compact ? 0 : "auto",
             overflow: "hidden",
             transition: "opacity 150ms ease, width 150ms ease",
           }}
@@ -243,7 +235,6 @@ function SidebarContent({ collapsed, onClose }) {
         </span>
       </div>
 
-      {/* ── Nav items ── */}
       <div
         style={{
           flex: 1,
@@ -265,7 +256,7 @@ function SidebarContent({ collapsed, onClose }) {
 
           return (
             <div key={si} style={{ marginBottom: 4 }}>
-              {section.label && !collapsed && (
+              {section.label && !compact && (
                 <div
                   style={{
                     fontFamily: "var(--font-body)",
@@ -275,8 +266,6 @@ function SidebarContent({ collapsed, onClose }) {
                     textTransform: "uppercase",
                     letterSpacing: "0.06em",
                     padding: "8px 10px 4px",
-                    opacity: collapsed ? 0 : 1,
-                    transition: "opacity 150ms ease",
                   }}
                 >
                   {section.label}
@@ -286,7 +275,7 @@ function SidebarContent({ collapsed, onClose }) {
                 <NavItem
                   key={item.path}
                   item={item}
-                  collapsed={collapsed}
+                  compact={compact}
                   isActive={location.pathname === item.path}
                   onClose={onClose}
                 />
@@ -296,14 +285,11 @@ function SidebarContent({ collapsed, onClose }) {
         })}
       </div>
 
-      {/* ── Bottom area ── */}
       <div style={{ padding: "8px 10px", flexShrink: 0 }}>
-        {/* Divider */}
         <div
           style={{ height: 1, background: "var(--border)", marginBottom: 6 }}
         />
 
-        {/* Theme toggle */}
         <button
           onClick={toggleTheme}
           style={{
@@ -312,7 +298,7 @@ function SidebarContent({ collapsed, onClose }) {
             gap: 10,
             height: 40,
             width: "100%",
-            padding: collapsed ? "0 13px" : "0 10px",
+            padding: compact ? "0 13px" : "0 10px",
             borderRadius: 8,
             fontFamily: "var(--font-body)",
             fontWeight: 500,
@@ -322,7 +308,7 @@ function SidebarContent({ collapsed, onClose }) {
             transition: "all 150ms ease",
             background: "transparent",
             border: "none",
-            justifyContent: collapsed ? "center" : "flex-start",
+            justifyContent: compact ? "center" : "flex-start",
           }}
         >
           {theme === "dark" ? (
@@ -332,8 +318,8 @@ function SidebarContent({ collapsed, onClose }) {
           )}
           <span
             style={{
-              opacity: collapsed ? 0 : 1,
-              width: collapsed ? 0 : "auto",
+              opacity: compact ? 0 : 1,
+              width: compact ? 0 : "auto",
               overflow: "hidden",
               whiteSpace: "nowrap",
               transition: "opacity 150ms ease, width 150ms ease",
@@ -343,7 +329,6 @@ function SidebarContent({ collapsed, onClose }) {
           </span>
         </button>
 
-        {/* User profile row */}
         <div style={{ position: "relative" }}>
           <button
             onClick={() => setShowUserPopover((v) => !v)}
@@ -353,12 +338,12 @@ function SidebarContent({ collapsed, onClose }) {
               gap: 10,
               height: 40,
               width: "100%",
-              padding: collapsed ? "0 13px" : "0 10px",
+              padding: compact ? "0 13px" : "0 10px",
               borderRadius: 8,
               cursor: "pointer",
               background: "transparent",
               border: "none",
-              justifyContent: collapsed ? "center" : "flex-start",
+              justifyContent: compact ? "center" : "flex-start",
               overflow: "hidden",
             }}
           >
@@ -370,8 +355,8 @@ function SidebarContent({ collapsed, onClose }) {
                 alignItems: "flex-start",
                 flex: 1,
                 overflow: "hidden",
-                opacity: collapsed ? 0 : 1,
-                width: collapsed ? 0 : "auto",
+                opacity: compact ? 0 : 1,
+                width: compact ? 0 : "auto",
                 transition: "opacity 150ms ease, width 150ms ease",
               }}
             >
@@ -403,7 +388,6 @@ function SidebarContent({ collapsed, onClose }) {
             </div>
           </button>
 
-          {/* User popover */}
           <AnimatePresence>
             {showUserPopover && (
               <motion.div
@@ -458,99 +442,37 @@ function SidebarContent({ collapsed, onClose }) {
   );
 }
 
-// ── Sidebar export ─────────────────────────────────────────
-export default function Sidebar({ mobileOpen, onMobileClose }) {
-  const [collapsed, setCollapsed] = useState(false);
+export default function Sidebar({ mobileOpen, onClose }) {
+  const [isTabletCollapsed, setIsTabletCollapsed] = useState(false);
+
+  useEffect(() => {
+    function update() {
+      if (typeof window === "undefined") return;
+      const w = window.innerWidth;
+      setIsTabletCollapsed(w >= 768 && w < 1024);
+    }
+
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
 
   return (
     <>
-      {/* ── Desktop sidebar ── */}
-      <div
-        className="sidebar-desktop"
-        style={{
-          position: "relative",
-          width: collapsed ? 64 : 240,
-          flexShrink: 0,
-          transition: "width 250ms ease",
-          height: "100%",
-        }}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={onClose}
+        />
+      )}
+
+      <aside
+        className={`fixed md:relative top-0 left-0 h-full z-50 md:z-auto transition-transform duration-300 ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        } w-60 md:w-16 lg:w-60`}
       >
-        <SidebarContent collapsed={collapsed} onClose={() => {}} />
-
-        {/* Collapse toggle button */}
-        <button
-          onClick={() => setCollapsed((c) => !c)}
-          style={{
-            position: "absolute",
-            right: -12,
-            top: 20,
-            width: 24,
-            height: 24,
-            borderRadius: "50%",
-            background: "var(--bg-elevated)",
-            border: "1px solid var(--border)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            zIndex: 10,
-            padding: 0,
-          }}
-        >
-          {collapsed ? (
-            <ChevronRight size={14} color="var(--text-muted)" />
-          ) : (
-            <ChevronLeft size={14} color="var(--text-muted)" />
-          )}
-        </button>
-      </div>
-
-      {/* ── Mobile overlay + panel ── */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <>
-            <motion.div
-              key="sidebar-overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={onMobileClose}
-              style={{
-                position: "fixed",
-                inset: 0,
-                background: "var(--overlay)",
-                zIndex: 40,
-              }}
-            />
-            <motion.div
-              key="sidebar-panel"
-              initial={{ x: -240 }}
-              animate={{ x: 0 }}
-              exit={{ x: -240 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              style={{
-                position: "fixed",
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: 240,
-                zIndex: 50,
-              }}
-            >
-              <SidebarContent collapsed={false} onClose={onMobileClose} />
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* Responsive visibility */}
-      <style>{`
-        .sidebar-desktop { display: flex !important; }
-        @media (max-width: 767px) {
-          .sidebar-desktop { display: none !important; }
-        }
-      `}</style>
+        <SidebarContent compact={isTabletCollapsed} onClose={onClose} />
+      </aside>
     </>
   );
 }

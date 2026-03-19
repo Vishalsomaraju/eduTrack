@@ -119,7 +119,8 @@ function DataRow({ row, rowIndex, columns, onRowClick }) {
             fontSize: "0.875rem",
             fontFamily: "var(--font-body)",
             color: "var(--text-primary)",
-            borderBottom: "1px solid color-mix(in srgb, var(--border) 50%, transparent)",
+            borderBottom:
+              "1px solid color-mix(in srgb, var(--border) 50%, transparent)",
             verticalAlign: "middle",
             whiteSpace: "nowrap",
           }}
@@ -143,19 +144,13 @@ export default function Table({
 
   return (
     <div
-      className={className}
-      style={{
-        overflowX: "auto",
-        borderRadius: "12px",
-        border: "1px solid var(--border)",
-      }}
+      className={["w-full overflow-x-auto rounded-lg", className]
+        .filter(Boolean)
+        .join(" ")}
     >
       <table
-        style={{
-          width: "100%",
-          borderCollapse: "collapse",
-          fontFamily: "var(--font-body)",
-        }}
+        className="w-full min-w-120"
+        style={{ borderCollapse: "collapse", fontFamily: "var(--font-body)" }}
       >
         <thead>
           <tr

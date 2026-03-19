@@ -4,22 +4,13 @@
 
 import { motion } from "framer-motion";
 
-const PAD = {
-  sm: "16px",
-  md: "24px",
-  lg: "32px",
-};
-
 export default function Card({
   children,
   title,
   action,
-  padding = "md",
   hoverable = false,
   className = "",
 }) {
-  const pad = PAD[padding] ?? PAD.md;
-
   return (
     <motion.div
       className={`relative overflow-hidden ${className}`}
@@ -29,8 +20,7 @@ export default function Card({
         /* Base border — top edge gets the glass highlight below */
         border: "1px solid var(--border)",
         borderTop: "1px solid rgba(255,255,255,0.07)",
-        boxShadow:
-          "0 4px 24px rgba(0,0,0,0.25), 0 1px 3px rgba(0,0,0,0.15)",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.25), 0 1px 3px rgba(0,0,0,0.15)",
       }}
       whileHover={
         hoverable
@@ -41,7 +31,9 @@ export default function Card({
             }
           : {}
       }
-      transition={hoverable ? { type: "tween", duration: 0.2, ease: "easeOut" } : {}}
+      transition={
+        hoverable ? { type: "tween", duration: 0.2, ease: "easeOut" } : {}
+      }
     >
       {/* Optional header with gradient wash */}
       {(title || action) && (
@@ -79,7 +71,7 @@ export default function Card({
       )}
 
       {/* Content area with padding variant */}
-      <div style={{ padding: pad }}>{children}</div>
+      <div className="p-3 sm:p-4 lg:p-5">{children}</div>
     </motion.div>
   );
 }
