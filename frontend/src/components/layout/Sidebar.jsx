@@ -9,6 +9,7 @@ import {
   Users,
   GraduationCap,
   BookOpen,
+  UserCircle,
   Sun,
   Moon,
   LogOut,
@@ -289,6 +290,53 @@ function SidebarContent({ compact, onClose }) {
         <div
           style={{ height: 1, background: "var(--border)", marginBottom: 6 }}
         />
+
+        <Link
+          to="/profile"
+          onClick={onClose}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            height: 40,
+            width: "100%",
+            padding: compact ? "0 13px" : "0 10px",
+            borderRadius: 8,
+            fontFamily: "var(--font-body)",
+            fontWeight: location.pathname === "/profile" ? 600 : 500,
+            fontSize: "0.875rem",
+            color:
+              location.pathname === "/profile"
+                ? "var(--accent)"
+                : "var(--text-muted)",
+            textDecoration: "none",
+            cursor: "pointer",
+            transition: "all 150ms ease",
+            background:
+              location.pathname === "/profile"
+                ? "var(--accent-subtle)"
+                : "transparent",
+            boxShadow:
+              location.pathname === "/profile"
+                ? "inset 3px 0 0 var(--accent)"
+                : "none",
+            justifyContent: compact ? "center" : "flex-start",
+            whiteSpace: "nowrap",
+            marginBottom: 2,
+          }}
+        >
+          <UserCircle size={18} strokeWidth={1.75} style={{ flexShrink: 0 }} />
+          <span
+            style={{
+              opacity: compact ? 0 : 1,
+              width: compact ? 0 : "auto",
+              overflow: "hidden",
+              transition: "opacity 150ms ease, width 150ms ease",
+            }}
+          >
+            Profile
+          </span>
+        </Link>
 
         <button
           onClick={toggleTheme}

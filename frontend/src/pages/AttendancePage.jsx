@@ -2,11 +2,13 @@
 // Admin: summary + marker. Faculty: marker + summary. Student: summary + calendar.
 
 import { useState, useEffect } from "react";
+import { BookOpen } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useAttendance } from "@/hooks/useAttendance";
 import AttendanceMarker from "@/components/attendance/AttendanceMarker";
 import AttendanceSummary from "@/components/attendance/AttendanceSummary";
 import AttendanceCalendar from "@/components/attendance/AttendanceCalendar";
+import { EmptyState, SkeletonTable } from "@/components/ui";
 
 const ROLE_SUBTITLE = {
   admin: "System-wide attendance overview",
@@ -236,26 +238,24 @@ export default function AttendancePage() {
       </div>
 
       {/* ── Loading subjects ── */}
-      {loadingSubjects && (
-        <div
-          style={{
-            color: "var(--text-muted)",
-            fontFamily: "var(--font-body)",
-            fontSize: "0.875rem",
-          }}
-        >
-          Loading...
-        </div>
+      {loadingSubjects && <SkeletonTable />}
+
+      {!loadingSubjects && subjects.length === 0 && (
+        <EmptyState
+          icon={BookOpen}
+          title="No subjects found"
+          description="No subjects are assigned yet."
+        />
       )}
 
       {/* ── Role views ── */}
-      {!loadingSubjects && role === "admin" && (
+      {!loadingSubjects && subjects.length > 0 && role === "admin" && (
         <AdminView subjects={subjects} />
       )}
-      {!loadingSubjects && role === "faculty" && (
+      {!loadingSubjects && subjects.length > 0 && role === "faculty" && (
         <FacultyView subjects={subjects} />
       )}
-      {!loadingSubjects && role === "student" && (
+      {!loadingSubjects && subjects.length > 0 && role === "student" && (
         <StudentView subjects={subjects} userId={user?.id} />
       )}
     </>

@@ -9,7 +9,7 @@
 
 import { useMemo } from "react";
 import { CheckCircle } from "lucide-react";
-import { Badge, Button, Card, Table } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, Table } from "@/components/ui";
 
 // ── Avatar initials helper ───────────────────────────────────────────────────
 
@@ -265,31 +265,11 @@ export default function AtRiskTable({
     >
       {/* Empty state — no at-risk students */}
       {!loading && count === 0 ? (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "32px 0",
-            gap: 10,
-          }}
-        >
-          <CheckCircle
-            size={40}
-            style={{ color: "var(--accent-green)", opacity: 0.8 }}
-          />
-          <span
-            style={{
-              fontFamily: "var(--font-body)",
-              fontSize: "0.875rem",
-              color: "var(--text-muted)",
-              textAlign: "center",
-            }}
-          >
-            All students are on track
-          </span>
-        </div>
+        <EmptyState
+          icon={CheckCircle}
+          title="No at-risk students"
+          description="All students are above the threshold."
+        />
       ) : (
         <Table
           columns={COLUMNS}

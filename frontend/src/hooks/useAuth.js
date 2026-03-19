@@ -6,7 +6,7 @@ import { useAuthStore } from "@/stores/authStore";
 async function fetchProfile(userId) {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, name, role, email, avatar_url")
+    .select("id, name, role, email, avatar_url, created_at")
     .eq("id", userId)
     .single();
   if (error) return null;
@@ -14,7 +14,8 @@ async function fetchProfile(userId) {
 }
 
 export function useAuth() {
-  const { setUser, setProfile, setLoading, setError, reset } = useAuthStore();
+  const { setUser, setProfile, setLoading, setError, clearUser } =
+    useAuthStore();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,12 +33,17 @@ export function useAuth() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_OUT") {
+        useAuthStore.getState().clearUser();
+        return;
+      }
+
       if (session?.user) {
         setUser(session.user);
         const profile = await fetchProfile(session.user.id);
         setProfile(profile);
       } else {
-        reset();
+        clearUser();
       }
       setLoading(false);
     });
@@ -59,9 +65,15 @@ export function useAuth() {
   }
 
   async function signOut() {
-    await supabase.auth.signOut();
-    reset();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      setError(error.message);
+      return { error };
+    }
+
+    clearUser();
     navigate("/login");
+    return { error: null };
   }
 
   return { signIn, signOut };

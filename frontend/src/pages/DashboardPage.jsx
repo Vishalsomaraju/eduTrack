@@ -14,7 +14,7 @@ import {
 import { useAuthStore } from "@/stores/authStore";
 import { useAttendance } from "@/hooks/useAttendance";
 import { useMarks } from "@/hooks/useMarks";
-import { Card } from "@/components/ui";
+import { Card, SkeletonCard } from "@/components/ui";
 import StatCard from "@/components/dashboard/StatCard";
 import AttendanceRing from "@/components/dashboard/AttendanceRing";
 import AtRiskBanner from "@/components/dashboard/AtRiskBanner";
@@ -248,62 +248,54 @@ function StudentDashboard() {
       )}
 
       {/* ── Stats row ─────────────────────────────────────────────── */}
-      <div
-        className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
-        style={{ marginBottom: 24 }}
-      >
-        <StatCard
-          label="Attendance"
-          value={loading ? "—" : `${overallAttendance}%`}
-          sub={loading ? undefined : `across ${totalSubjects} subjects`}
-          icon={CalendarCheck}
-          color={
-            loading ? "default" : overallAttendance >= 75 ? "green" : "red"
-          }
-          trend={
-            loading
-              ? undefined
-              : {
-                  direction: overallAttendance >= 75 ? "up" : "down",
-                  value:
-                    overallAttendance >= 75 ? "On track" : "Below threshold",
-                }
-          }
-          loading={loading}
-        />
-        <StatCard
-          label="Subjects"
-          value={loading ? "—" : totalSubjects}
-          sub="enrolled this semester"
-          icon={BookOpen}
-          color="blue"
-          loading={loading}
-        />
-        <StatCard
-          label="Avg Score"
-          value={loading ? "—" : `${avgScore}%`}
-          sub="across all assessments"
-          icon={ClipboardList}
-          color={
-            loading
-              ? "default"
-              : avgScore >= 60
-                ? "green"
-                : avgScore >= 40
-                  ? "amber"
-                  : "red"
-          }
-          loading={loading}
-        />
-        <StatCard
-          label="At Risk"
-          value={loading ? "—" : totalWarnings}
-          sub={totalWarnings > 0 ? "subjects need attention" : "All clear"}
-          icon={AlertTriangle}
-          color={loading ? "default" : totalWarnings > 0 ? "red" : "green"}
-          loading={loading}
-        />
-      </div>
+      {loading ? (
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
+          style={{ marginBottom: 24 }}
+        >
+          {[0, 1, 2, 3].map((item) => (
+            <SkeletonCard key={item} />
+          ))}
+        </div>
+      ) : (
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
+          style={{ marginBottom: 24 }}
+        >
+          <StatCard
+            label="Attendance"
+            value={`${overallAttendance}%`}
+            sub={`across ${totalSubjects} subjects`}
+            icon={CalendarCheck}
+            color={overallAttendance >= 75 ? "green" : "red"}
+            trend={{
+              direction: overallAttendance >= 75 ? "up" : "down",
+              value: overallAttendance >= 75 ? "On track" : "Below threshold",
+            }}
+          />
+          <StatCard
+            label="Subjects"
+            value={totalSubjects}
+            sub="enrolled this semester"
+            icon={BookOpen}
+            color="blue"
+          />
+          <StatCard
+            label="Avg Score"
+            value={`${avgScore}%`}
+            sub="across all assessments"
+            icon={ClipboardList}
+            color={avgScore >= 60 ? "green" : avgScore >= 40 ? "amber" : "red"}
+          />
+          <StatCard
+            label="At Risk"
+            value={totalWarnings}
+            sub={totalWarnings > 0 ? "subjects need attention" : "All clear"}
+            icon={AlertTriangle}
+            color={totalWarnings > 0 ? "red" : "green"}
+          />
+        </div>
+      )}
 
       {/* ── Attendance rings ──────────────────────────────────────── */}
       <div style={{ marginBottom: 24 }}>
@@ -530,58 +522,58 @@ function FacultyDashboard() {
       </div>
 
       {/* ── Stats row ─────────────────────────────────────────────── */}
-      <div
-        className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
-        style={{ marginBottom: 24 }}
-      >
-        <StatCard
-          label="My Subjects"
-          value={loading ? "—" : totalSubjects}
-          sub="assigned this semester"
-          icon={BookOpen}
-          color="blue"
-          loading={loading}
-        />
-        <StatCard
-          label="Total Students"
-          value={loading ? "—" : totalStudents}
-          sub="across all subjects"
-          icon={Users}
-          color="default"
-          loading={loading}
-        />
-        <StatCard
-          label="Avg Attendance"
-          value={loading ? "—" : `${overallAvgAttendance}%`}
-          sub="across all classes"
-          icon={CalendarCheck}
-          color={
-            loading ? "default" : overallAvgAttendance >= 75 ? "green" : "red"
-          }
-          trend={
-            loading
-              ? undefined
-              : {
-                  direction: overallAvgAttendance >= 75 ? "up" : "down",
-                  value:
-                    overallAvgAttendance >= 75 ? "Healthy" : "Needs attention",
-                }
-          }
-          loading={loading}
-        />
-        <StatCard
-          label="At Risk Students"
-          value={loading ? "—" : totalAtRisk}
-          sub={
-            totalAtRisk > 0
-              ? "need immediate attention"
-              : "All students on track"
-          }
-          icon={AlertTriangle}
-          color={loading ? "default" : totalAtRisk > 0 ? "red" : "green"}
-          loading={loading}
-        />
-      </div>
+      {loading ? (
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
+          style={{ marginBottom: 24 }}
+        >
+          {[0, 1, 2, 3].map((item) => (
+            <SkeletonCard key={item} />
+          ))}
+        </div>
+      ) : (
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
+          style={{ marginBottom: 24 }}
+        >
+          <StatCard
+            label="My Subjects"
+            value={totalSubjects}
+            sub="assigned this semester"
+            icon={BookOpen}
+            color="blue"
+          />
+          <StatCard
+            label="Total Students"
+            value={totalStudents}
+            sub="across all subjects"
+            icon={Users}
+            color="default"
+          />
+          <StatCard
+            label="Avg Attendance"
+            value={`${overallAvgAttendance}%`}
+            sub="across all classes"
+            icon={CalendarCheck}
+            color={overallAvgAttendance >= 75 ? "green" : "red"}
+            trend={{
+              direction: overallAvgAttendance >= 75 ? "up" : "down",
+              value: overallAvgAttendance >= 75 ? "Healthy" : "Needs attention",
+            }}
+          />
+          <StatCard
+            label="At Risk Students"
+            value={totalAtRisk}
+            sub={
+              totalAtRisk > 0
+                ? "need immediate attention"
+                : "All students on track"
+            }
+            icon={AlertTriangle}
+            color={totalAtRisk > 0 ? "red" : "green"}
+          />
+        </div>
+      )}
 
       {/* ── My Classes ────────────────────────────────────────────── */}
       <h2

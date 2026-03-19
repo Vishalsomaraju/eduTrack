@@ -4,11 +4,13 @@
 // Student: StudentMarksCard, no selector needed
 
 import { useEffect, useState } from "react";
+import { BarChart2 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useMarks } from "@/hooks/useMarks";
 import MarksEntry from "@/components/marks/MarksEntry";
 import MarksTable from "@/components/marks/MarksTable";
 import StudentMarksCard from "@/components/marks/StudentMarksCard";
+import { EmptyState, SkeletonTable } from "@/components/ui";
 
 const SUBTITLE = {
   admin: "Enter and review marks across all subjects",
@@ -160,7 +162,17 @@ export default function MarksPage() {
           />
         </div>
 
-        {selectedSubject && (
+        {loadingSubjects && <SkeletonTable />}
+
+        {!loadingSubjects && subjects.length === 0 && (
+          <EmptyState
+            icon={BarChart2}
+            title="No marks recorded"
+            description="Marks will appear here once entered."
+          />
+        )}
+
+        {!loadingSubjects && selectedSubject && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
             <MarksEntry subjectId={selectedSubject} />
             <MarksTable subjectId={selectedSubject} />
@@ -185,7 +197,17 @@ export default function MarksPage() {
         />
       </div>
 
-      {selectedSubject && (
+      {loadingSubjects && <SkeletonTable />}
+
+      {!loadingSubjects && subjects.length === 0 && (
+        <EmptyState
+          icon={BarChart2}
+          title="No marks recorded"
+          description="Marks will appear here once entered."
+        />
+      )}
+
+      {!loadingSubjects && selectedSubject && (
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           <MarksEntry subjectId={selectedSubject} />
           <MarksTable subjectId={selectedSubject} />

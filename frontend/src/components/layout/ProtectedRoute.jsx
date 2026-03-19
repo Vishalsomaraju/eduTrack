@@ -27,8 +27,9 @@ function Spinner() {
   );
 }
 
-export default function ProtectedRoute({ children, allowedRoles }) {
+export default function ProtectedRoute({ children, roles, allowedRoles }) {
   const { user, role, loading } = useAuthStore();
+  const resolvedRoles = roles ?? allowedRoles;
 
   if (loading) {
     return (
@@ -50,7 +51,7 @@ export default function ProtectedRoute({ children, allowedRoles }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(role)) {
+  if (resolvedRoles && !resolvedRoles.includes(role)) {
     return <Navigate to="/dashboard" replace />;
   }
 
