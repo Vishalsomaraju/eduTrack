@@ -130,12 +130,12 @@ function StudentDashboard() {
   const [allMarks, setAllMarks] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
-  const loadedUserIdRef = useRef(null);
+  const studentLoadedRef = useRef(null);
 
   useEffect(() => {
     if (!user?.id) return;
-    if (loadedUserIdRef.current === user.id) return;
-    loadedUserIdRef.current = user.id;
+    if (studentLoadedRef.current === user.id) return;
+    studentLoadedRef.current = user.id;
 
     async function loadData() {
       // Parallel first-wave fetches
@@ -433,7 +433,7 @@ function FacultyDashboard() {
   const [totalAtRisk, setTotalAtRisk] = useState(0);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [loading, setLoading] = useState(true);
-  const loadedUserIdRef = useRef(null);
+  const facultyLoadedRef = useRef(null);
 
   const overallAvgAttendance = useMemo(() => {
     const vals = subjects.map((s) => perSubjectStats[s.id]?.avg ?? 0);
@@ -443,8 +443,8 @@ function FacultyDashboard() {
 
   useEffect(() => {
     if (!user?.id) return;
-    if (loadedUserIdRef.current === user.id) return;
-    loadedUserIdRef.current = user.id;
+    if (facultyLoadedRef.current === user.id) return;
+    facultyLoadedRef.current = user.id;
 
     async function load() {
       const subjectsResult = await fetchSubjects();
@@ -684,7 +684,7 @@ function AdminDashboard() {
   const [allMarksFlat, setAllMarksFlat] = useState([]);
   const [trendData, setTrendData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const loadedUserIdRef = useRef(null);
+  const adminLoadedRef = useRef(null);
 
   // ── Derived stats ──────────────────────────────────────────────
   const totalStudents = students.length;
@@ -718,8 +718,8 @@ function AdminDashboard() {
 
   useEffect(() => {
     if (!user?.id) return;
-    if (loadedUserIdRef.current === user.id) return;
-    loadedUserIdRef.current = user.id;
+    if (adminLoadedRef.current === user.id) return;
+    adminLoadedRef.current = user.id;
 
     async function load() {
       // Step 1: base data in parallel
