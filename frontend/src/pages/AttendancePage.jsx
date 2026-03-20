@@ -2,7 +2,7 @@
 // Admin: summary + marker. Faculty: marker + summary. Student: summary + calendar.
 
 import { useState, useEffect } from "react";
-import { BookOpen } from "lucide-react";
+import { BookOpen, AlertTriangle } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useAttendance } from "@/hooks/useAttendance";
 import AttendanceMarker from "@/components/attendance/AttendanceMarker";
@@ -127,9 +127,10 @@ function FacultyView({ subjects }) {
 
 // ── Student view ───────────────────────────────────────────────
 function StudentView({ subjects, userId }) {
-  const { fetchStudentAttendance } = useAttendance();
+  const { fetchMyAttendanceHistory } = useAttendance();
   const [selectedSubject, setSelectedSubject] = useState("");
   const [calRecords, setCalRecords] = useState([]);
+  const [studentError, setStudentError] = useState(null);
   const today = new Date();
   const selected = subjects.find((s) => s.id === selectedSubject);
 
@@ -144,12 +145,35 @@ function StudentView({ subjects, userId }) {
   useEffect(() => {
     if (!selectedSubject || !userId) {
       setCalRecords([]);
+      setStudentError(null);
       return;
     }
-    fetchStudentAttendance(selectedSubject, userId).then(({ data }) => {
-      setCalRecords(data ?? []);
-    });
+    setStudentError(null);
+    fetchMyAttendanceHistory(selectedSubject)
+      .then(({ data, error }) => {
+        if (error) {
+          setStudentError("Failed to load your attendance records.");
+          setCalRecords([]);
+        } else {
+          setCalRecords(data ?? []);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        setStudentError(err.message || "Failed to load attendance.");
+        setCalRecords([]);
+      });
   }, [selectedSubject, userId]);
+
+  if (studentError) {
+    return (
+      <EmptyState
+        icon={AlertTriangle}
+        title="Something went wrong"
+        description={studentError}
+      />
+    );
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -201,13 +225,37 @@ export default function AttendancePage() {
   const { fetchSubjects } = useAttendance();
   const [subjects, setSubjects] = useState([]);
   const [loadingSubjects, setLoadingSubjects] = useState(true);
+  const [pageError, setPageError] = useState(null);
 
   useEffect(() => {
-    fetchSubjects().then(({ data }) => {
-      setSubjects(data ?? []);
-      setLoadingSubjects(false);
-    });
+    setPageError(null);
+    fetchSubjects()
+      .then(({ data, error }) => {
+        setLoadingSubjects(false);
+        if (error) {
+          setPageError("Failed to load subjects.");
+          setSubjects([]);
+        } else {
+          setSubjects(data ?? []);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        setPageError(err.message || "Failed to load subjects.");
+        setLoadingSubjects(false);
+        setSubjects([]);
+      });
   }, []);
+
+  if (pageError) {
+    return (
+      <EmptyState
+        icon={AlertTriangle}
+        title="Something went wrong"
+        description={pageError}
+      />
+    );
+  }
 
   return (
     <>
