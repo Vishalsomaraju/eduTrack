@@ -123,7 +123,7 @@ function MarkRow({ label, mark }) {
 
 // ── Progress bar ───────────────────────────────────────────────────────────
 function ProgressBar({ pct }) {
-  const fillColor = percentageColor(pct);
+  const fillColor = "var(--accent)";
   return (
     <div style={{ marginTop: 10 }}>
       <div
@@ -219,7 +219,7 @@ function SubjectBlock({ subject, compact }) {
 }
 
 // ── Main component ─────────────────────────────────────────────────────────
-export default function StudentMarksCard({ compact = false }) {
+export default function StudentMarksCard({ compact = false, subjectMap = {} }) {
   const { fetchAllMyMarks } = useMarks();
   const [marks, setMarks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -244,8 +244,8 @@ export default function StudentMarksCard({ compact = false }) {
       if (!map[sid]) {
         map[sid] = {
           id: sid,
-          name: m.subjects?.name ?? "—",
-          code: m.subjects?.code ?? "",
+          name: subjectMap[sid]?.name ?? m.subjects?.name ?? sid,
+          code: subjectMap[sid]?.code ?? m.subjects?.code ?? "",
           internal: null,
           assignment: null,
         };
@@ -254,7 +254,7 @@ export default function StudentMarksCard({ compact = false }) {
       else if (m.type === "assignment") map[sid].assignment = m;
     }
     return Object.values(map);
-  }, [marks]);
+  }, [marks, subjectMap]);
 
   // Overall GPA equivalent — mean of all individual mark percentages
   const overallPct = useMemo(() => {

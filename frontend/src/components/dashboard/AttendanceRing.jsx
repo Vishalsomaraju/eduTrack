@@ -4,9 +4,7 @@
 import { motion } from "framer-motion";
 
 function ringColor(pct) {
-  if (pct >= 75) return "var(--accent-green)";
-  if (pct >= 60) return "var(--accent-amber)";
-  return "var(--accent-red)";
+  return "var(--accent)";
 }
 
 export default function AttendanceRing({

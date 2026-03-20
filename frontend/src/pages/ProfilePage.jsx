@@ -23,17 +23,6 @@ function getRoleBadgeVariant(role) {
   return "amber";
 }
 
-function formatMemberSince(value) {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
-
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { user, profile, setProfile } = useAuthStore();
@@ -60,6 +49,14 @@ export default function ProfilePage() {
     if (!profile?.role) return "User";
     return profile.role[0].toUpperCase() + profile.role.slice(1);
   }, [profile?.role]);
+
+  const memberSince = profile?.created_at
+    ? new Date(profile.created_at).toLocaleDateString("en-IN", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : "Unknown";
 
   async function handleSaveName() {
     const nextName = name.trim();
@@ -98,8 +95,11 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:px-0">
-      <div className="mb-5 flex items-center gap-4 rounded-xl border border-(--border) bg-(--bg-surface) p-5">
+    <div
+      className="mx-auto w-full max-w-2xl sm:px-0"
+      style={{ padding: "clamp(1rem, 2vw, 1.5rem)" }}
+    >
+      <div className="mb-5 flex items-center gap-4 rounded-(--radius-card) border border-(--border) bg-(--bg-surface) p-5">
         {profile?.avatar_url ? (
           <img
             src={profile.avatar_url}
@@ -125,7 +125,7 @@ export default function ProfilePage() {
       <div className="space-y-5">
         <Card title="Profile Information">
           <div className="space-y-3">
-            <div className="rounded-lg border border-(--border) bg-(--bg-elevated) p-3">
+            <div className="rounded-(--radius-inner) border border-(--border) bg-(--bg-elevated) p-3">
               <p className="text-xs uppercase tracking-wide text-(--text-muted)">
                 Email
               </p>
@@ -133,7 +133,7 @@ export default function ProfilePage() {
                 {user?.email || "-"}
               </p>
             </div>
-            <div className="rounded-lg border border-(--border) bg-(--bg-elevated) p-3">
+            <div className="rounded-(--radius-inner) border border-(--border) bg-(--bg-elevated) p-3">
               <p className="text-xs uppercase tracking-wide text-(--text-muted)">
                 Role
               </p>
@@ -141,13 +141,11 @@ export default function ProfilePage() {
                 {profile?.role || "-"}
               </p>
             </div>
-            <div className="rounded-lg border border-(--border) bg-(--bg-elevated) p-3">
+            <div className="rounded-(--radius-inner) border border-(--border) bg-(--bg-elevated) p-3">
               <p className="text-xs uppercase tracking-wide text-(--text-muted)">
                 Member Since
               </p>
-              <p className="text-sm text-(--text-primary)">
-                {formatMemberSince(profile?.created_at)}
-              </p>
+              <p className="text-sm text-(--text-primary)">{memberSince}</p>
             </div>
           </div>
         </Card>
@@ -191,14 +189,14 @@ export default function ProfilePage() {
         </Button>
 
         {error && (
-          <p className="rounded-lg border border-(--accent-red-border) bg-(--accent-red-bg) px-3 py-2 text-sm text-(--accent-red)">
+          <p className="rounded-(--radius-inner) border border-(--accent-red-border) bg-(--accent-red-bg) px-3 py-2 text-sm text-(--accent-red)">
             {error}
           </p>
         )}
       </div>
 
       {toast && (
-        <div className="pointer-events-none fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-lg border border-(--accent-green-border) bg-(--accent-green-bg) px-4 py-2 text-sm font-semibold text-(--accent-green) shadow-lg">
+        <div className="pointer-events-none fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-(--radius-inner) border border-(--accent-green-border) bg-(--accent-green-bg) px-4 py-2 text-sm font-semibold text-(--accent-green) shadow-lg">
           <UserCircle size={16} />
           {toast}
         </div>

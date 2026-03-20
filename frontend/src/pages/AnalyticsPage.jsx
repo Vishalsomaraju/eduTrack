@@ -27,7 +27,7 @@ function FilterPill({ label, active, onClick }) {
       onClick={onClick}
       style={{
         padding: "5px 14px",
-        borderRadius: 9999,
+        borderRadius: "var(--radius-pill)",
         fontFamily: "var(--font-body)",
         fontSize: "0.8rem",
         fontWeight: 500,
@@ -106,7 +106,7 @@ function AdminFacultyAnalytics({ role }) {
       : "Institution-wide performance insights";
 
   return (
-    <div>
+    <div style={{ padding: "clamp(1rem, 2vw, 1.5rem)" }}>
       {/* Page header */}
       <div style={{ marginBottom: 24 }}>
         <h2
@@ -158,7 +158,10 @@ function AdminFacultyAnalytics({ role }) {
         style={{ marginBottom: 16 }}
       >
         <AttendanceTrendChart data={trendData} loading={loading} />
-        <SubjectComparisonChart data={comparisonData} loading={!comparisonData.length} />
+        <SubjectComparisonChart
+          data={comparisonData}
+          loading={!comparisonData.length}
+        />
       </div>
 
       {/* Row 2: Grade Distribution + Class Performance */}
@@ -279,7 +282,7 @@ function StudentAnalytics() {
   const myMarksDist = myMarks.length > 0 ? myMarks : [];
 
   return (
-    <div>
+    <div style={{ padding: "clamp(1rem, 2vw, 1.5rem)" }}>
       <div style={{ marginBottom: 24 }}>
         <h2
           style={{

@@ -3,7 +3,7 @@
 // Faculty: top subject selector + full-width entry + table below
 // Student: StudentMarksCard, no selector needed
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BarChart2 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useMarks } from "@/hooks/useMarks";
@@ -121,27 +121,26 @@ export default function MarksPage() {
   const [selectedSubject, setSelectedSubject] = useState("");
   const [loadingSubjects, setLoadingSubjects] = useState(true);
 
-  useEffect(() => {
-    // Students don't need a subject selector — skip the fetch
-    if (role === "student") {
-      setLoadingSubjects(false);
-      return;
-    }
+  const subjectMap = useMemo(
+    () => Object.fromEntries(subjects.map((s) => [s.id, s])),
+    [subjects],
+  );
 
+  useEffect(() => {
     fetchSubjects().then(({ data }) => {
       setLoadingSubjects(false);
       const list = data ?? [];
       setSubjects(list);
-      if (list.length > 0) setSelectedSubject(list[0].id);
+      if (role !== "student" && list.length > 0) setSelectedSubject(list[0].id);
     });
   }, [role]);
 
   // ── Student view ──────────────────────────────────────────────────────
   if (role === "student") {
     return (
-      <div style={{ padding: "24px" }}>
+      <div style={{ padding: "clamp(1rem, 2vw, 1.5rem)" }}>
         <PageHeader role="student" />
-        <StudentMarksCard compact={false} />
+        <StudentMarksCard compact={false} subjectMap={subjectMap} />
       </div>
     );
   }
@@ -149,7 +148,7 @@ export default function MarksPage() {
   // ── Admin view ─────────────────────────────────────────────────────────
   if (role === "admin") {
     return (
-      <div style={{ padding: "24px" }}>
+      <div style={{ padding: "clamp(1rem, 2vw, 1.5rem)" }}>
         <PageHeader role="admin" />
 
         {/* Subject selector */}
@@ -184,7 +183,7 @@ export default function MarksPage() {
 
   // ── Faculty view ───────────────────────────────────────────────────────
   return (
-    <div style={{ padding: "24px" }}>
+    <div style={{ padding: "clamp(1rem, 2vw, 1.5rem)" }}>
       <PageHeader role="faculty" />
 
       {/* Subject selector */}

@@ -16,7 +16,7 @@ export default function Card({
       className={`relative overflow-hidden ${className}`}
       style={{
         background: "var(--bg-surface)",
-        borderRadius: "16px",
+        borderRadius: "var(--radius-card)",
         /* Base border — top edge gets the glass highlight below */
         border: "1px solid var(--border)",
         borderTop: "1px solid rgba(255,255,255,0.07)",

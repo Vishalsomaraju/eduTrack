@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,6 +13,8 @@ import {
   Sun,
   Moon,
   LogOut,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useAuth } from "@/hooks/useAuth";
@@ -164,7 +166,7 @@ function NavItem({ item, compact, isActive, onClose }) {
   );
 }
 
-function SidebarContent({ compact, onClose }) {
+function SidebarContent({ compact, onClose, onToggle }) {
   const [showUserPopover, setShowUserPopover] = useState(false);
   const location = useLocation();
   const { profile, role } = useAuthStore();
@@ -188,53 +190,85 @@ function SidebarContent({ compact, onClose }) {
           height: 64,
           display: "flex",
           alignItems: "center",
-          padding: "0 16px",
+          padding: compact ? "0 8px" : "0 12px",
           gap: 10,
-          justifyContent: compact ? "center" : "flex-start",
+          justifyContent: compact ? "center" : "space-between",
           flexShrink: 0,
         }}
       >
-        <div
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: "50%",
-            background: "var(--accent-subtle)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: "50%",
+              background: "var(--accent-subtle)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <span
+              style={{
+                fontFamily: "var(--font-display)",
+                fontWeight: 700,
+                fontSize: "1rem",
+                color: "var(--accent)",
+                lineHeight: 1,
+                userSelect: "none",
+              }}
+            >
+              E
+            </span>
+          </div>
           <span
             style={{
               fontFamily: "var(--font-display)",
               fontWeight: 700,
               fontSize: "1rem",
-              color: "var(--accent)",
-              lineHeight: 1,
-              userSelect: "none",
+              color: "var(--text-primary)",
+              whiteSpace: "nowrap",
+              opacity: compact ? 0 : 1,
+              width: compact ? 0 : "auto",
+              overflow: "hidden",
+              transition: "opacity 150ms ease, width 150ms ease",
             }}
           >
-            E
+            EduTrack
           </span>
         </div>
-        <span
+
+        <button
+          onClick={onToggle}
           style={{
-            fontFamily: "var(--font-display)",
-            fontWeight: 700,
-            fontSize: "1rem",
-            color: "var(--text-primary)",
-            whiteSpace: "nowrap",
-            opacity: compact ? 0 : 1,
-            width: compact ? 0 : "auto",
-            overflow: "hidden",
-            transition: "opacity 150ms ease, width 150ms ease",
+            border: "1px solid var(--border)",
+            background: "var(--bg-elevated)",
+            color: "var(--text-muted)",
+            borderRadius: "var(--radius-inner)",
+            width: 28,
+            height: 28,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            flexShrink: 0,
           }}
+          aria-label={compact ? "Expand sidebar" : "Collapse sidebar"}
         >
-          EduTrack
-        </span>
+          {compact ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+        </button>
       </div>
+
+      {!compact && (
+        <div
+          style={{
+            height: 1,
+            background: "var(--border)",
+            margin: "0 10px 6px",
+          }}
+        />
+      )}
 
       <div
         style={{
@@ -490,21 +524,7 @@ function SidebarContent({ compact, onClose }) {
   );
 }
 
-export default function Sidebar({ mobileOpen, onClose }) {
-  const [isTabletCollapsed, setIsTabletCollapsed] = useState(false);
-
-  useEffect(() => {
-    function update() {
-      if (typeof window === "undefined") return;
-      const w = window.innerWidth;
-      setIsTabletCollapsed(w >= 768 && w < 1024);
-    }
-
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-
+export default function Sidebar({ mobileOpen, onClose, collapsed, onToggle }) {
   return (
     <>
       {mobileOpen && (
@@ -515,11 +535,16 @@ export default function Sidebar({ mobileOpen, onClose }) {
       )}
 
       <aside
-        className={`fixed md:relative top-0 left-0 h-full z-50 md:z-auto transition-transform duration-300 ${
+        className={`fixed top-0 left-0 h-full z-50 transition-transform duration-300 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        } w-60 md:w-16 lg:w-60`}
+        }`}
+        style={{ width: collapsed ? 64 : 240, transition: "width 200ms ease" }}
       >
-        <SidebarContent compact={isTabletCollapsed} onClose={onClose} />
+        <SidebarContent
+          compact={collapsed}
+          onClose={onClose}
+          onToggle={onToggle}
+        />
       </aside>
     </>
   );

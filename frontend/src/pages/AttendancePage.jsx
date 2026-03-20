@@ -258,7 +258,7 @@ export default function AttendancePage() {
   }
 
   return (
-    <>
+    <div style={{ padding: "clamp(1rem, 2vw, 1.5rem)" }}>
       {/* ── Page title ── */}
       <div style={{ marginBottom: 28 }}>
         <h1
@@ -306,6 +306,6 @@ export default function AttendancePage() {
       {!loadingSubjects && subjects.length > 0 && role === "student" && (
         <StudentView subjects={subjects} userId={user?.id} />
       )}
-    </>
+    </div>
   );
 }

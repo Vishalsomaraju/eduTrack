@@ -120,7 +120,7 @@ function RingSkeleton({ size = 120 }) {
 // ── Student dashboard ──────────────────────────────────────────────────────
 
 function StudentDashboard() {
-  const { user, profile } = useAuthStore();
+  const { user, profile, role } = useAuthStore();
   const { fetchSubjects, fetchAttendanceSummary, fetchRecentActivity } =
     useAttendance();
   const { fetchAllMyMarks } = useMarks();
@@ -139,16 +139,23 @@ function StudentDashboard() {
 
     async function loadData() {
       // Parallel first-wave fetches
-      const [subjectsResult, marksResult, recentResult] = await Promise.all([
+      const [subjectsResult, marksResult] = await Promise.all([
         fetchSubjects(),
         fetchAllMyMarks(),
-        fetchRecentActivity(user.id),
       ]);
 
       const subs = subjectsResult.data ?? [];
       setSubjects(subs);
       setAllMarks(marksResult.data ?? []);
-      setRecentActivity(recentResult.data ?? []);
+
+      const recentResults = await Promise.all(
+        subs.map((s) => fetchRecentActivity(s.id, role, user.id)),
+      );
+      const mergedRecent = recentResults
+        .flatMap((r) => r.data ?? [])
+        .sort((a, b) => String(b.date).localeCompare(String(a.date)))
+        .slice(0, 10);
+      setRecentActivity(mergedRecent);
 
       // Second wave — per-subject attendance summaries
       if (subs.length > 0) {
@@ -157,7 +164,11 @@ function StudentDashboard() {
         );
         const map = {};
         subs.forEach((s, i) => {
-          const entry = summaryResults[i].data?.[0];
+          const summaryData = summaryResults[i].data;
+          console.log("Summary response:", summaryData);
+          const entry = Array.isArray(summaryData)
+            ? summaryData[0]
+            : summaryData;
           if (entry) map[s.id] = entry;
         });
         setSummaries(map);
@@ -177,6 +188,11 @@ function StudentDashboard() {
   }, [subjects, summaries]);
 
   const totalSubjects = subjects.length;
+
+  const subjectMap = useMemo(
+    () => Object.fromEntries(subjects.map((s) => [s.id, s])),
+    [subjects],
+  );
 
   const avgScore = useMemo(() => {
     if (allMarks.length === 0) return 0;
@@ -202,19 +218,19 @@ function StudentDashboard() {
       allMarks
         .filter((m) => m.max_score > 0 && m.score / m.max_score < 0.4)
         .map((m) => ({
-          subjectName: m.subjects?.name ?? "—",
+          subjectName: subjectMap[m.subject_id]?.name || m.subject_id,
           type: m.type,
           score: m.score,
           maxScore: m.max_score,
         })),
-    [allMarks],
+    [allMarks, subjectMap],
   );
 
   const totalWarnings = attendanceWarnings.length + marksWarnings.length;
   const firstName = profile?.name?.split(" ")[0] ?? "there";
 
   return (
-    <div style={{ padding: "24px" }}>
+    <div style={{ padding: "clamp(1rem, 2vw, 1.5rem)" }}>
       {/* ── Greeting header ───────────────────────────────────────── */}
       <div style={{ marginBottom: 24 }}>
         <h1
@@ -363,7 +379,7 @@ function StudentDashboard() {
 
       {/* ── Bottom two-column grid ────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <StudentMarksCard compact={true} />
+        <StudentMarksCard compact={true} subjectMap={subjectMap} />
         <RecentActivity records={recentActivity} loading={loading} />
       </div>
     </div>
@@ -499,7 +515,7 @@ function FacultyDashboard() {
   const totalSubjects = subjects.length;
 
   return (
-    <div style={{ padding: 24 }}>
+    <div style={{ padding: "clamp(1rem, 2vw, 1.5rem)" }}>
       {/* ── Greeting ──────────────────────────────────────────────── */}
       <div style={{ marginBottom: 24 }}>
         <h1
@@ -778,7 +794,7 @@ function AdminDashboard() {
   const firstName = profile?.name?.split(" ")[0] ?? "there";
 
   return (
-    <div style={{ padding: 24 }}>
+    <div style={{ padding: "clamp(1rem, 2vw, 1.5rem)" }}>
       {/* ── Greeting ──────────────────────────────────────────────── */}
       <div style={{ marginBottom: 24 }}>
         <h1

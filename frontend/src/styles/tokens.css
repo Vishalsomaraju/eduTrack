@@ -166,6 +166,9 @@
   --radius-xl: 12px; /* Card */
   --radius-2xl: 16px; /* Modal */
   --radius-full: 9999px; /* Pill / Avatar */
+  --radius-card: 12px;
+  --radius-inner: 8px;
+  --radius-pill: 9999px;
 }
 
 /* ── Transition Tokens ────────────────────────────────────── */
