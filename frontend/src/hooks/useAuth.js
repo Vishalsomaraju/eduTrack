@@ -3,10 +3,16 @@ import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/stores/authStore";
 import api, { apiWithToken } from "@/lib/api";
 
-export function useAuth() {
+export function useAuth({ initialize = false } = {}) {
   const { setUser, clearUser, setLoading } = useAuthStore();
 
   useEffect(() => {
+    // Only App should run auth lifecycle init/listener.
+    // Other callers (e.g. Sidebar/Profile/Login) only need signIn/signOut actions.
+    if (!initialize) {
+      return;
+    }
+
     const initAuth = async () => {
       setLoading(true);
       try {
@@ -52,8 +58,10 @@ export function useAuth() {
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [initialize]);
 
   const signIn = async (email, password) => {
     setLoading(true);

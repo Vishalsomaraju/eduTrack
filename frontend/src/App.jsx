@@ -43,7 +43,7 @@ function RootRedirect() {
 // ── AppContent — must be inside BrowserRouter so hooks work ───
 function AppContent() {
   // Session listener runs for the entire app lifetime
-  useAuth();
+  useAuth({ initialize: true });
 
   // Apply theme to <html data-theme="..."> + persist to localStorage
   useTheme();
