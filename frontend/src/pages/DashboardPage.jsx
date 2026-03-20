@@ -3,7 +3,7 @@
 // Faculty view: subject overview, quick attendance, grade distribution.
 // Admin: "coming soon" stub (built next sprint).
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   BookOpen,
@@ -130,9 +130,12 @@ function StudentDashboard() {
   const [allMarks, setAllMarks] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
+  const loadedUserIdRef = useRef(null);
 
   useEffect(() => {
     if (!user?.id) return;
+    if (loadedUserIdRef.current === user.id) return;
+    loadedUserIdRef.current = user.id;
 
     async function loadData() {
       // Parallel first-wave fetches
@@ -430,6 +433,7 @@ function FacultyDashboard() {
   const [totalAtRisk, setTotalAtRisk] = useState(0);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [loading, setLoading] = useState(true);
+  const loadedUserIdRef = useRef(null);
 
   const overallAvgAttendance = useMemo(() => {
     const vals = subjects.map((s) => perSubjectStats[s.id]?.avg ?? 0);
@@ -439,6 +443,8 @@ function FacultyDashboard() {
 
   useEffect(() => {
     if (!user?.id) return;
+    if (loadedUserIdRef.current === user.id) return;
+    loadedUserIdRef.current = user.id;
 
     async function load() {
       const subjectsResult = await fetchSubjects();
@@ -678,6 +684,7 @@ function AdminDashboard() {
   const [allMarksFlat, setAllMarksFlat] = useState([]);
   const [trendData, setTrendData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const loadedUserIdRef = useRef(null);
 
   // ── Derived stats ──────────────────────────────────────────────
   const totalStudents = students.length;
@@ -711,6 +718,8 @@ function AdminDashboard() {
 
   useEffect(() => {
     if (!user?.id) return;
+    if (loadedUserIdRef.current === user.id) return;
+    loadedUserIdRef.current = user.id;
 
     async function load() {
       // Step 1: base data in parallel

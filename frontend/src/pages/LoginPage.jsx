@@ -4,6 +4,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 import { Input, Button } from "@/components/ui";
+import { useNavigate } from "react-router-dom";
 
 function EyeIcon({ open }) {
   return open ? (
@@ -51,13 +52,17 @@ export default function LoginPage() {
   const error = useAuthStore((s) => s.error);
   const { signIn } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate(); // ← add this
 
   async function handleSubmit(e) {
     e.preventDefault();
     if (!email.trim() || !password) return;
     setSubmitting(true);
-    await signIn(email.trim(), password);
+    const { error } = await signIn(email.trim(), password);
     setSubmitting(false);
+    if (!error) {
+      navigate("/dashboard"); // ← add this
+    }
   }
 
   return (

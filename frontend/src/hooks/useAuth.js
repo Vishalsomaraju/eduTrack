@@ -1,13 +1,12 @@
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/stores/authStore";
-import api from "@/lib/api";
+import api, { apiWithToken } from "@/lib/api";
 
 export function useAuth() {
   const { setUser, clearUser, setLoading } = useAuthStore();
 
   useEffect(() => {
-    // Step 1 — check existing session on mount
     const initAuth = async () => {
       setLoading(true);
       try {
@@ -17,21 +16,21 @@ export function useAuth() {
 
         if (session?.access_token) {
           try {
-            const profile = await api.get("/auth/me");
+            const profile = await apiWithToken(
+              "/auth/me",
+              session.access_token,
+            );
             setUser({
               user: session.user,
               profile,
               role: profile.role,
             });
           } catch (err) {
-            // Token exists but /auth/me failed
-            // Clear session to force re-login
             console.error("Profile fetch failed:", err);
             await supabase.auth.signOut();
             clearUser();
           }
         } else {
-          // No session — just clear loading
           clearUser();
         }
       } catch (err) {
@@ -44,27 +43,9 @@ export function useAuth() {
 
     initAuth();
 
-    // Step 2 — listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN" && session) {
-        setLoading(true);
-        try {
-          const profile = await api.get("/auth/me");
-          setUser({
-            user: session.user,
-            profile,
-            role: profile.role,
-          });
-        } catch (err) {
-          console.error("Profile fetch on sign in failed:", err);
-          clearUser();
-        } finally {
-          setLoading(false);
-        }
-      }
-
       if (event === "SIGNED_OUT") {
         clearUser();
         setLoading(false);
@@ -81,11 +62,30 @@ export function useAuth() {
         email,
         password,
       });
+
       if (error) {
         setLoading(false);
         return { error };
       }
-      // onAuthStateChange handles the rest
+
+      // Use token directly from signIn response
+      // getSession() is not reliable immediately after login
+      const token = data.session.access_token;
+
+      try {
+        const profile = await apiWithToken("/auth/me", token);
+        setUser({
+          user: data.user,
+          profile,
+          role: profile.role,
+        });
+      } catch (err) {
+        console.error("Profile fetch after login failed:", err);
+        clearUser();
+      } finally {
+        setLoading(false);
+      }
+
       return { error: null };
     } catch (err) {
       setLoading(false);
