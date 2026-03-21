@@ -21,9 +21,9 @@ function SkeletonRow({ colCount }) {
               borderRadius: "4px",
               width: SHIMMER_WIDTHS[i % SHIMMER_WIDTHS.length],
               background:
-                "linear-gradient(90deg, var(--bg-elevated) 0%, rgba(255,255,255,0.05) 50%, var(--bg-elevated) 100%)",
+                "linear-gradient(90deg, var(--bg-elevated) 0%, rgba(255,255,255,0.08) 50%, var(--bg-elevated) 100%)",
               backgroundSize: "200% 100%",
-              animation: "shimmer 1.5s infinite",
+              animation: "shimmer 1.8s infinite",
             }}
           />
         </td>
@@ -92,12 +92,16 @@ function DataRow({ row, rowIndex, columns, onRowClick }) {
     if (!clickable) return;
     e.currentTarget.style.background = "var(--accent-subtle)";
     e.currentTarget.style.boxShadow = "inset 3px 0 0 var(--accent)";
+    // In CSS border-collapse: collapse mode, rounding TRs reliably is tricky,
+    // but applying it locally here gives the highlight a slightly softer edge in supported browsers.
+    e.currentTarget.style.borderRadius = "6px";
   }
 
   function handleLeave(e) {
     if (!clickable) return;
     e.currentTarget.style.background = baseBackground;
     e.currentTarget.style.boxShadow = "none";
+    e.currentTarget.style.borderRadius = "0px";
   }
 
   return (
@@ -108,7 +112,7 @@ function DataRow({ row, rowIndex, columns, onRowClick }) {
       style={{
         background: baseBackground,
         cursor: clickable ? "pointer" : "default",
-        transition: "all 150ms ease",
+        transition: "background 120ms ease, box-shadow 120ms ease",
       }}
     >
       {columns.map((col) => (

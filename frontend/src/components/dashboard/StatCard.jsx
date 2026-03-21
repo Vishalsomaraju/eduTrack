@@ -43,10 +43,10 @@ export default function StatCard({
   return (
     <div
       style={{
-        background: "var(--bg-surface)",
+        background: "linear-gradient(135deg, var(--bg-surface) 0%, rgba(197,125,94,0.03) 100%)",
         border: "1px solid var(--border)",
         borderRadius: 14,
-        padding: 20,
+        padding: "clamp(1.25rem, 2vw, 1.5rem)",
         boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
         position: "relative",
         overflow: "hidden",
@@ -94,6 +94,7 @@ export default function StatCard({
             fontSize: "2rem",
             color: valueColor,
             lineHeight: 1.1,
+            letterSpacing: "-0.02em",
           }}
         >
           {value}

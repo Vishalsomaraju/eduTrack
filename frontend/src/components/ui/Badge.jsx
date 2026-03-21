@@ -54,11 +54,12 @@ export default function Badge({
         ...sizeStyle,
         borderRadius: "9999px",
         fontFamily: "var(--font-body)",
-        fontWeight: 600,
-        letterSpacing: "0.03em",
+        fontWeight: 700,
+        letterSpacing: "0.04em",
         display: "inline-flex",
         alignItems: "center",
         gap: "6px",
+        backdropFilter: "blur(4px)",
       }}
     >
       {dot && (

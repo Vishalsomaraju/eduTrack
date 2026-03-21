@@ -34,7 +34,7 @@ export default function SubjectCard({
           : "1px solid var(--border)",
         borderTop: "var(--glass-top)",
         borderRadius: 14,
-        padding: 20,
+        padding: "clamp(1.25rem, 2vw, 1.5rem)",
         boxShadow: selected
           ? "0 0 0 3px var(--accent-glow)"
           : "var(--shadow-sm)",

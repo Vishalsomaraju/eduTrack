@@ -78,7 +78,7 @@ function AdminView({ subjects }) {
   const selected = subjects.find((s) => s.id === selectedSubject);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "clamp(1rem, 2.5vw, 1.75rem)" }}>
       <SubjectSelect
         subjects={subjects}
         value={selectedSubject}
@@ -103,7 +103,7 @@ function FacultyView({ subjects }) {
   const selected = subjects.find((s) => s.id === selectedSubject);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "clamp(1rem, 2.5vw, 1.75rem)" }}>
       <AttendanceMarker />
       {subjects.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -192,7 +192,7 @@ function StudentView({ subjects, userId }) {
   }, [safeRecords]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "clamp(1rem, 2.5vw, 1.75rem)" }}>
       <select
         value={selectedSubject}
         onChange={(e) => {

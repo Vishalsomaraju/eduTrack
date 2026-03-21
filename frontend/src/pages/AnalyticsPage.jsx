@@ -25,6 +25,7 @@ function FilterPill({ label, active, onClick }) {
   return (
     <button
       onClick={onClick}
+      title={label}
       style={{
         padding: "5px 14px",
         borderRadius: "var(--radius-pill)",
@@ -37,6 +38,9 @@ function FilterPill({ label, active, onClick }) {
         color: active ? "var(--accent)" : "var(--text-muted)",
         transition: "all 150ms ease",
         whiteSpace: "nowrap",
+        maxWidth: 200,
+        overflow: "hidden",
+        textOverflow: "ellipsis",
       }}
     >
       {label}
@@ -49,11 +53,12 @@ function FilterPill({ label, active, onClick }) {
 function AdminFacultyAnalytics({ role }) {
   const { fetchSubjects } = useAttendance();
 
-  const [loading, setLoading] = useState(true);
+  const [subjectLoading, setSubjectLoading] = useState(true);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [comparisonLoading, setComparisonLoading] = useState(true);
   const [subjects, setSubjects] = useState([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState(null);
 
-  // Data states from unified analytics hooks
   const [trendData, setTrendData] = useState([]);
   const [comparisonData, setComparisonData] = useState([]);
   const [distributionData, setDistributionData] = useState([]);
@@ -61,27 +66,31 @@ function AdminFacultyAnalytics({ role }) {
 
   useEffect(() => {
     async function init() {
-      setLoading(true);
+      setSubjectLoading(true);
       const { data: subs } = await fetchSubjects();
       const subjectList = subs ?? [];
       setSubjects(subjectList);
       if (subjectList.length > 0) {
         setSelectedSubjectId(subjectList[0].id);
       }
-      setLoading(false);
+      setSubjectLoading(false);
     }
     init();
   }, []);
 
-  // Fetch subject comparison once
+  // Fetch subject comparison once (independent loading state)
   useEffect(() => {
-    fetchSubjectComparison().then(setComparisonData).catch(console.error);
+    setComparisonLoading(true);
+    fetchSubjectComparison()
+      .then((data) => setComparisonData(Array.isArray(data) ? data : []))
+      .catch(console.error)
+      .finally(() => setComparisonLoading(false));
   }, []);
 
   // Fetch subject-specific analytics when selectedSubjectId changes
   useEffect(() => {
     if (!selectedSubjectId) return;
-    setLoading(true);
+    setAnalyticsLoading(true);
 
     Promise.all([
       fetchAttendanceTrend(selectedSubjectId),
@@ -89,16 +98,15 @@ function AdminFacultyAnalytics({ role }) {
       fetchAtRiskStudents(selectedSubjectId),
     ])
       .then(([trend, dist, risk]) => {
-        setTrendData(trend ?? []);
-        setDistributionData(dist ?? []);
-        setAtRiskData(risk ?? []);
+        setTrendData(Array.isArray(trend) ? trend : []);
+        setDistributionData(Array.isArray(dist) ? dist : []);
+        setAtRiskData(Array.isArray(risk) ? risk : []);
       })
       .catch(console.error)
-      .finally(() => setLoading(false));
+      .finally(() => setAnalyticsLoading(false));
   }, [selectedSubjectId]);
 
-  const selectedSubject =
-    subjects.find((s) => s.id === selectedSubjectId) ?? subjects[0];
+  const selectedSubject = subjects.find((s) => s.id === selectedSubjectId);
 
   const headerSub =
     role === "faculty"
@@ -132,7 +140,7 @@ function AdminFacultyAnalytics({ role }) {
         </p>
       </div>
 
-      {/* Filter bar */}
+      {/* Filter bar — subject NAMES (not codes) */}
       <div
         style={{
           display: "flex",
@@ -142,25 +150,89 @@ function AdminFacultyAnalytics({ role }) {
           flexWrap: "wrap",
         }}
       >
-        {subjects.map((s) => (
-          <FilterPill
-            key={s.id}
-            label={s.code}
-            active={selectedSubjectId === s.id}
-            onClick={() => setSelectedSubjectId(s.id)}
-          />
-        ))}
+        {subjectLoading
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                style={{
+                  width: 120,
+                  height: 32,
+                  borderRadius: 9999,
+                  background:
+                    "linear-gradient(90deg, var(--bg-elevated) 0%, rgba(255,255,255,0.04) 50%, var(--bg-elevated) 100%)",
+                  backgroundSize: "200% 100%",
+                  animation: "shimmer 1.5s infinite",
+                }}
+              />
+            ))
+          : subjects.map((s) => (
+              <FilterPill
+                key={s.id}
+                label={s.name} // ← subject NAME, not code
+                active={selectedSubjectId === s.id}
+                onClick={() => setSelectedSubjectId(s.id)}
+              />
+            ))}
       </div>
+
+      {/* Selected subject context badge */}
+      {selectedSubject && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginBottom: 20,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "var(--font-body)",
+              fontSize: "0.8rem",
+              color: "var(--text-muted)",
+            }}
+          >
+            Showing data for:
+          </span>
+          <span
+            style={{
+              fontFamily: "var(--font-display)",
+              fontWeight: 700,
+              fontSize: "0.85rem",
+              color: "var(--accent)",
+              background: "var(--accent-subtle)",
+              border: "1px solid var(--accent)",
+              borderRadius: 6,
+              padding: "2px 10px",
+            }}
+          >
+            {selectedSubject.name}
+          </span>
+          <span
+            style={{
+              fontFamily: "var(--font-body)",
+              fontSize: "0.75rem",
+              color: "var(--text-muted)",
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--border)",
+              borderRadius: 6,
+              padding: "2px 8px",
+            }}
+          >
+            {selectedSubject.code}
+          </span>
+        </div>
+      )}
 
       {/* Row 1: Trend + Subject Comparison */}
       <div
         className="grid grid-cols-1 lg:grid-cols-2 gap-4"
         style={{ marginBottom: 16 }}
       >
-        <AttendanceTrendChart data={trendData} loading={loading} />
+        <AttendanceTrendChart data={trendData} loading={analyticsLoading} />
         <SubjectComparisonChart
           data={comparisonData}
-          loading={!comparisonData.length}
+          loading={comparisonLoading} // ← proper dedicated loading state
         />
       </div>
 
@@ -169,7 +241,10 @@ function AdminFacultyAnalytics({ role }) {
         className="grid grid-cols-1 lg:grid-cols-2 gap-4"
         style={{ marginBottom: 16 }}
       >
-        <MarksDistributionChart data={distributionData} loading={loading} />
+        <MarksDistributionChart
+          data={distributionData}
+          loading={analyticsLoading}
+        />
         <ClassPerformance
           subjectId={selectedSubject?.id}
           subjectName={selectedSubject?.name}
@@ -178,12 +253,12 @@ function AdminFacultyAnalytics({ role }) {
 
       {/* Row 3: Attendance Heatmap */}
       <div style={{ marginBottom: 16 }}>
-        <AttendanceHeatmap data={trendData} loading={loading} />
+        <AttendanceHeatmap data={trendData} loading={analyticsLoading} />
       </div>
 
       {/* Row 4: At-Risk Table */}
       <div>
-        <AtRiskTable data={atRiskData} loading={loading} />
+        <AtRiskTable data={atRiskData} loading={analyticsLoading} />
       </div>
     </div>
   );
@@ -214,7 +289,7 @@ function StudentAnalytics() {
         await Promise.all([
           fetchSubjects(),
           fetchAllMyMarks(),
-          fetchMyAttendanceHistory(user.id), // No wait, student just needs history for heatmap
+          fetchMyAttendanceHistory(user.id),
         ]);
 
       const subjectList = subs ?? [];
@@ -368,6 +443,7 @@ function StudentAnalytics() {
             Attendance by Subject
           </div>
 
+          {/* Subject filter pills — show NAMES */}
           <div
             style={{
               display: "flex",
@@ -381,7 +457,7 @@ function StudentAnalytics() {
                   <div
                     key={i}
                     style={{
-                      width: 64,
+                      width: 100,
                       height: 28,
                       borderRadius: 9999,
                       background:
@@ -394,7 +470,7 @@ function StudentAnalytics() {
               : subjects.map((s) => (
                   <FilterPill
                     key={s.id}
-                    label={s.code}
+                    label={s.name} // ← subject NAME, not code
                     active={selectedSubjectId === s.id}
                     onClick={() => setSelectedSubjectId(s.id)}
                   />

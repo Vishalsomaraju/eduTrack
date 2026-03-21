@@ -7,12 +7,18 @@ class SubjectCreate(BaseModel):
     code: str
     semester: int
     faculty_id: Optional[str] = None
+    subject_type: Optional[str] = 'core'
+    year: Optional[int] = None
+    credits: Optional[int] = 3
 
 class SubjectUpdate(BaseModel):
     name: Optional[str] = None
     code: Optional[str] = None
     semester: Optional[int] = None
     faculty_id: Optional[str] = None
+    subject_type: Optional[str] = None
+    year: Optional[int] = None
+    credits: Optional[int] = None
 
 class SubjectResponse(BaseModel):
     id: str
@@ -21,3 +27,7 @@ class SubjectResponse(BaseModel):
     semester: int
     faculty_id: Optional[str] = None
     created_at: Optional[datetime] = None
+    subject_type: Optional[str] = None
+    year: Optional[int] = None
+    credits: Optional[int] = None
+    sem_half: Optional[str] = None

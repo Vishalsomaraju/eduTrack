@@ -56,7 +56,7 @@ export default function Input({
       outline: "none",
       paddingLeft: icon ? "40px" : "14px",
       paddingRight: rightElement ? "40px" : "14px",
-      transition: "all 200ms ease",
+      transition: "box-shadow 180ms ease, border-color 180ms ease, background-color 180ms ease",
       opacity: disabled ? 0.5 : 1,
       cursor: disabled ? "not-allowed" : "text",
     };
@@ -74,6 +74,7 @@ export default function Input({
     if (focused) {
       return {
         ...base,
+        background: "color-mix(in srgb, var(--input-bg) 85%, white)",
         border: "1px solid var(--input-focus-border)",
         boxShadow:
           "inset 0 1px 3px rgba(0,0,0,0.2), 0 0 0 3px var(--accent-glow)",

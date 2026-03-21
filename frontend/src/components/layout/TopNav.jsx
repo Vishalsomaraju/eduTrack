@@ -1,5 +1,6 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { NavLink, Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   Sun,
   Moon,
@@ -46,8 +47,9 @@ export default function TopNav() {
           zIndex: 50,
           height: 56,
           width: "100%",
-          background: "var(--bg-surface)",
-          borderBottom: "1px solid var(--border)",
+          background: "color-mix(in srgb, var(--bg-surface) 85%, transparent)",
+          backdropFilter: "blur(12px)",
+          borderBottom: "1px solid rgba(197, 125, 94, 0.15)",
           display: "flex",
           alignItems: "center",
           padding: "0 24px",
@@ -112,6 +114,7 @@ export default function TopNav() {
                 alignItems: "center",
                 gap: 6,
                 padding: "6px 14px",
+                position: "relative",
                 borderRadius: 8,
                 fontFamily: "var(--font-body)",
                 fontWeight: 500,
@@ -122,8 +125,27 @@ export default function TopNav() {
                 transition: "all 150ms ease",
               })}
             >
-              <item.icon size={16} />
-              {item.label}
+              {({ isActive }) => (
+                <>
+                  <item.icon size={16} />
+                  {item.label}
+                  {isActive && (
+                    <motion.div
+                      initial={{ width: 0, opacity: 0 }}
+                      animate={{ width: "80%", opacity: 1 }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}
+                      style={{
+                        position: "absolute",
+                        bottom: -2,
+                        left: "10%",
+                        height: 2,
+                        background: "var(--accent)",
+                        borderRadius: "2px 2px 0 0",
+                      }}
+                    />
+                  )}
+                </>
+              )}
             </NavLink>
           ))}
         </div>

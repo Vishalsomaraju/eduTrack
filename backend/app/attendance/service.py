@@ -48,8 +48,13 @@ def get_summary(subject_id: str, student_id: str) -> dict:
     }
 
 def mark_attendance(data: dict) -> dict:
+    # Convert date to string if it's a date object
+    if 'date' in data and hasattr(data['date'], 'isoformat'):
+        data['date'] = data['date'].isoformat()
+    
     res = admin_client.table("attendance")\
-        .upsert(data, on_conflict="student_id,subject_id,date")\
+        .upsert(data,
+            on_conflict="student_id,subject_id,date")\
         .execute()
     return res.data[0]
 

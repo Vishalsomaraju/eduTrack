@@ -46,10 +46,11 @@ function buildStyle(variant, hovered, isInactive) {
         background: "linear-gradient(135deg, var(--accent-btn-from) 0%, var(--accent-btn-to) 100%)",
         color: "var(--accent-btn-text)",
         border: "none",
+        borderTop: "1px solid rgba(255, 255, 255, 0.15)",
         boxShadow: h
           ? "0 4px 20px var(--accent-btn-shadow), inset 0 1px 0 rgba(255,255,255,0.18)"
           : "0 2px 8px var(--accent-btn-shadow), inset 0 1px 0 rgba(255,255,255,0.18)",
-        filter: h ? "brightness(1.05)" : undefined,
+        filter: h ? "brightness(1.1)" : undefined,
       };
 
     case "secondary":
@@ -107,7 +108,7 @@ export default function Button({
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
       whileHover={isInactive ? {} : { scale: 1.02 }}
-      whileTap={isInactive ? {} : { scale: 0.96 }}
+      whileTap={isInactive ? {} : { scale: 0.97 }}
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
       className={[
         "inline-flex items-center justify-center relative",

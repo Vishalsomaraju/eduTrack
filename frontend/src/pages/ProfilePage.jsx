@@ -213,7 +213,7 @@ export default function ProfilePage() {
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "300px 1fr", gap: "1.5rem", alignItems: "start" }}>
         
         {/* LEFT PANEL */}
-        <div style={{ position: isMobile ? "static" : "sticky", top: 72, background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 12, padding: "24px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+        <div style={{ position: isMobile ? "static" : "sticky", top: 72, background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 12, padding: "clamp(1.25rem, 2vw, 1.5rem)", display: "flex", flexDirection: "column", alignItems: "center" }}>
           
           <div 
             style={{ position: "relative", width: 120, height: 120, borderRadius: "50%", background: "var(--accent-subtle)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: "pointer", marginBottom: 16 }}
@@ -362,7 +362,7 @@ export default function ProfilePage() {
                 </div>
               ) : (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
-                  <div style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", borderRadius: 8, padding: 16 }}>
+                  <div style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", borderRadius: 8, padding: "clamp(1rem, 1.5vw, 1.25rem)" }}>
                     <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--text-primary)", marginBottom: 16 }}>Father</div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       <Field label="Name" value={detail?.father_name} />
@@ -370,7 +370,7 @@ export default function ProfilePage() {
                       <Field label="Email" value={detail?.father_email} />
                     </div>
                   </div>
-                  <div style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", borderRadius: 8, padding: 16 }}>
+                  <div style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", borderRadius: 8, padding: "clamp(1rem, 1.5vw, 1.25rem)" }}>
                     <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--text-primary)", marginBottom: 16 }}>Mother</div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       <Field label="Name" value={detail?.mother_name} />
@@ -378,7 +378,7 @@ export default function ProfilePage() {
                       <Field label="Email" value={detail?.mother_email} />
                     </div>
                   </div>
-                  <div style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", borderRadius: 8, padding: 16 }}>
+                  <div style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", borderRadius: 8, padding: "clamp(1rem, 1.5vw, 1.25rem)" }}>
                     <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--text-primary)", marginBottom: 16 }}>Guardian (Optional)</div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       {detail?.guardian_name || detail?.guardian_phone ? (

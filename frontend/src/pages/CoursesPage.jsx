@@ -220,7 +220,7 @@ export default function CoursesPage() {
         <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--text-muted)', margin: 0 }}>R22 B.Tech CSE — KPRIT Hyderabad</p>
       </div>
 
-      <div style={{ background: 'var(--accent-subtle)', border: '1px solid var(--accent)', borderRadius: 10, padding: '12px 20px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ background: 'var(--accent-subtle)', border: '1px solid var(--accent)', borderRadius: 10, padding: 'clamp(0.75rem, 1.5vw, 1rem) clamp(1rem, 2vw, 1.5rem)', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10 }}>
         <span style={{ color: 'var(--accent)', fontWeight: 700, fontFamily: 'var(--font-display)' }}>📍 Current Semester: II Year II Semester (2-2)</span>
         <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Academic Year 2024-25</span>
       </div>
@@ -238,7 +238,7 @@ export default function CoursesPage() {
       </div>
 
       <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--border)', background: 'var(--bg-elevated)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'clamp(1rem, 1.5vw, 1.25rem) clamp(1rem, 2vw, 1.5rem)', borderBottom: '1px solid var(--border)', background: 'var(--bg-elevated)' }}>
           <div>
             <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.1rem', color: 'var(--text-primary)', margin: 0 }}>Semester {semLabelMap[activeSem]}</h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: '4px 0 0' }}>Total Credits: {totalCredits}</p>
@@ -265,7 +265,7 @@ export default function CoursesPage() {
                 <ElectiveSlotRow key={slot.slot} slot={slot} sem={activeSem} allSubjects={allSubjects} registered={registeredMap[slot.slot]} deadlines={deadlines} onRegister={handleRegister} role={role} />
               ))}
               {coreSubjects.length === 0 && (!ELECTIVE_SLOTS[activeSem] || ELECTIVE_SLOTS[activeSem].length === 0) && (
-                <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: 'var(--text-muted)' }}>No courses populated for this semester.</td></tr>
+                <tr><td colSpan={5} style={{ padding: 'clamp(1.25rem, 2vw, 1.5rem)', textAlign: 'center', color: 'var(--text-muted)' }}>No courses populated for this semester.</td></tr>
               )}
             </tbody>
           </table>

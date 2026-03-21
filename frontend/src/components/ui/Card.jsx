@@ -17,17 +17,18 @@ export default function Card({
       style={{
         background: "var(--bg-surface)",
         borderRadius: "var(--radius-card)",
-        /* Base border — top edge gets the glass highlight below */
         border: "1px solid var(--border)",
         borderTop: "1px solid rgba(255,255,255,0.07)",
         boxShadow: "0 4px 24px rgba(0,0,0,0.25), 0 1px 3px rgba(0,0,0,0.15)",
+        transition: "all 200ms ease",
       }}
       whileHover={
         hoverable
           ? {
               y: -3,
+              borderColor: "rgba(255, 255, 255, 0.15)",
               boxShadow:
-                "0 12px 40px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.2)",
+                "inset 0 0 0 1px rgba(197, 125, 94, 0.08), 0 12px 40px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.2)",
             }
           : {}
       }
@@ -71,7 +72,7 @@ export default function Card({
       )}
 
       {/* Content area with padding variant */}
-      <div className="p-3 sm:p-4 lg:p-5">{children}</div>
+      <div style={{ padding: "clamp(1.25rem, 2.5vw, 1.75rem)" }}>{children}</div>
     </motion.div>
   );
 }

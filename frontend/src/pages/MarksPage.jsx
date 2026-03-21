@@ -141,7 +141,7 @@ function TheoryBreakdown({ subj, m, getBadgeColors }) {
 
 function EmptySubjectCard({ subj }) {
   return (
-    <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 24px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 'clamp(1.25rem, 2vw, 1.5rem)', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
       <div>
         <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>{subj.name}</div>
         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 4 }}>{subj.code} · {subj.credits} Credits</div>
@@ -153,7 +153,7 @@ function EmptySubjectCard({ subj }) {
 
 function ElectiveSlotCard({ label }) {
   return (
-    <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 24px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 'clamp(1.25rem, 2vw, 1.5rem)', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
       <div>
         <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>{label}</div>
         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 4 }}>Not registered yet — go to My Courses to choose</div>
@@ -165,7 +165,7 @@ function ElectiveSlotCard({ label }) {
 
 function MCSubjectCard({ subj }) {
   return (
-    <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 24px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 'clamp(1.25rem, 2vw, 1.5rem)', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
       <div>
         <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>{subj.name}</div>
         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 4 }}>{subj.code} · S/U grading</div>
@@ -188,7 +188,7 @@ function LabRow({ label, val, max }) {
 
 function LabBreakdown({ subj, lm }) {
   return (
-    <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 24px', marginBottom: 16 }}>
+    <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 'clamp(1.25rem, 2vw, 1.5rem)', marginBottom: 16 }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
         <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>{subj.name}</span>
@@ -249,7 +249,7 @@ function LabBreakdown({ subj, lm }) {
 
 function LabEmptyCard({ subj }) {
   return (
-    <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 24px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 'clamp(1.25rem, 2vw, 1.5rem)', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>{subj.name}</span>
@@ -359,7 +359,7 @@ function StudentView({ marks, labMarks, allSubjects = [] }) {
         )}
       </div>
 
-      <div style={{ marginTop: 24, background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24, textAlign: "center" }}>
+      <div style={{ marginTop: 24, background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 12, padding: "clamp(1.25rem, 2vw, 1.5rem)", textAlign: "center" }}>
         <div style={{ fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-muted)", marginBottom: 8, fontWeight: 700 }}>Overall Semester Performance</div>
         <div style={{ display: "flex", justifyContent: "center", alignItems: "baseline", gap: 16 }}>
           <div style={{ fontSize: "3rem", fontWeight: 700, color: "var(--text-primary)", fontFamily: "var(--font-display)", lineHeight: 1 }}>{displayAvg}</div>
@@ -370,20 +370,114 @@ function StudentView({ marks, labMarks, allSubjects = [] }) {
   );
 }
 
+function LabFacultyTable({ students, subjectId, labSubjectMarks, handleUpdateLab }) {
+  return (
+    <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 12, overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.85rem" }}>
+        <thead>
+          <tr style={{ background: "var(--bg-elevated)", borderBottom: "1px solid var(--border)" }}>
+            <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>Student</th>
+            <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>Int.Viva(10)</th>
+            <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>Obs/Rec(10)</th>
+            <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>Lab Perf(20)</th>
+            <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>Ext.Viva(10)</th>
+            <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>Ext.Rec(10)</th>
+            <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>Lab Exam(40)</th>
+            <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--accent)" }}>Int(40)</th>
+            <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-primary)" }}>Total</th>
+            <th style={{ padding: "12px 16px", fontWeight: 600 }}>Grade</th>
+          </tr>
+        </thead>
+        <tbody>
+          {students.map(st => {
+            const inputStyle = { width: 60, padding: "6px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--input-bg)", color: "var(--text-primary)", textAlign: "center", outline: "none" };
+            const lm = labSubjectMarks.find(m => m.student_id === st.id) || {};
+            return (
+              <tr key={st.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                <td style={{ padding: "12px 16px", color: "var(--text-primary)", fontWeight: 500, whiteSpace: "nowrap" }}>{st.name}</td>
+                <td style={{ padding: "8px 16px" }}><input type="number" max="10" min="0" defaultValue={lm.internal_viva||""} onBlur={(e) => handleUpdateLab(st.id, "internal_viva", e.target.value)} onKeyDown={(e) => e.key==="Enter" && e.target.blur()} style={inputStyle} /></td>
+                <td style={{ padding: "8px 16px" }}><input type="number" max="10" min="0" defaultValue={lm.observation_record||""} onBlur={(e) => handleUpdateLab(st.id, "observation_record", e.target.value)} onKeyDown={(e) => e.key==="Enter" && e.target.blur()} style={inputStyle} /></td>
+                <td style={{ padding: "8px 16px" }}><input type="number" max="20" min="0" defaultValue={lm.lab_performance||""} onBlur={(e) => handleUpdateLab(st.id, "lab_performance", e.target.value)} onKeyDown={(e) => e.key==="Enter" && e.target.blur()} style={inputStyle} /></td>
+                <td style={{ padding: "8px 16px" }}><input type="number" max="10" min="0" defaultValue={lm.external_viva||""} onBlur={(e) => handleUpdateLab(st.id, "external_viva", e.target.value)} onKeyDown={(e) => e.key==="Enter" && e.target.blur()} style={inputStyle} /></td>
+                <td style={{ padding: "8px 16px" }}><input type="number" max="10" min="0" defaultValue={lm.external_record||""} onBlur={(e) => handleUpdateLab(st.id, "external_record", e.target.value)} onKeyDown={(e) => e.key==="Enter" && e.target.blur()} style={inputStyle} /></td>
+                <td style={{ padding: "8px 16px" }}><input type="number" max="40" min="0" defaultValue={lm.lab_exam||""} onBlur={(e) => handleUpdateLab(st.id, "lab_exam", e.target.value)} onKeyDown={(e) => e.key==="Enter" && e.target.blur()} style={inputStyle} /></td>
+                <td style={{ padding: "12px 16px", fontWeight: 600, color: "var(--accent)" }}>{lm.internal_total || 0}</td>
+                <td style={{ padding: "12px 16px", fontWeight: 700, color: "var(--text-primary)" }}>{lm.total || 0}</td>
+                <td style={{ padding: "12px 16px", fontWeight: 700, color: lm.grade ? (lm.grade==="F"?"var(--accent-red)":"var(--accent-green)") : "var(--text-muted)" }}>{lm.grade || "-"}</td>
+              </tr>
+            );
+          })}
+          {students.length === 0 && (
+            <tr>
+               <td colSpan={10} style={{ padding: "16px", textAlign: "center", color: "var(--text-muted)" }}>No students found in this course.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function TheoryFacultyTable({ students, subjectId, subjectMarks, handleUpdateTheory }) {
+  return (
+    <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 12, overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.85rem" }}>
+        <thead>
+          <tr style={{ background: "var(--bg-elevated)", borderBottom: "1px solid var(--border)" }}>
+            <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>Student</th>
+            <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>M1 Ex (30)</th>
+            <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>M1 As (10)</th>
+            <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>M2 Ex (30)</th>
+            <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>M2 As (10)</th>
+            <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>Ext (60)</th>
+            <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--accent)" }}>Int (40)</th>
+            <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-primary)" }}>Total</th>
+            <th style={{ padding: "12px 16px", fontWeight: 600 }}>Grade</th>
+          </tr>
+        </thead>
+        <tbody>
+          {students.map(st => {
+            const inputStyle = { width: 60, padding: "6px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--input-bg)", color: "var(--text-primary)", textAlign: "center", outline: "none" };
+            const mk = subjectMarks.find(m => m.student_id === st.id) || {};
+            return (
+              <tr key={st.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                <td style={{ padding: "12px 16px", color: "var(--text-primary)", fontWeight: 500, whiteSpace: "nowrap" }}>{st.name}</td>
+                <td style={{ padding: "8px 16px" }}><input type="number" max="30" min="0" defaultValue={mk.mid1_exam||""} onBlur={(e) => handleUpdateTheory(st.id, "mid1_exam", e.target.value)} onKeyDown={(e) => e.key==="Enter" && e.target.blur()} style={inputStyle} /></td>
+                <td style={{ padding: "8px 16px" }}><input type="number" max="10" min="0" defaultValue={mk.mid1_assign||""} onBlur={(e) => handleUpdateTheory(st.id, "mid1_assign", e.target.value)} onKeyDown={(e) => e.key==="Enter" && e.target.blur()} style={inputStyle} /></td>
+                <td style={{ padding: "8px 16px" }}><input type="number" max="30" min="0" defaultValue={mk.mid2_exam||""} onBlur={(e) => handleUpdateTheory(st.id, "mid2_exam", e.target.value)} onKeyDown={(e) => e.key==="Enter" && e.target.blur()} style={inputStyle} /></td>
+                <td style={{ padding: "8px 16px" }}><input type="number" max="10" min="0" defaultValue={mk.mid2_assign||""} onBlur={(e) => handleUpdateTheory(st.id, "mid2_assign", e.target.value)} onKeyDown={(e) => e.key==="Enter" && e.target.blur()} style={inputStyle} /></td>
+                <td style={{ padding: "8px 16px" }}><input type="number" max="60" min="0" defaultValue={mk.external||""} onBlur={(e) => handleUpdateTheory(st.id, "external", e.target.value)} onKeyDown={(e) => e.key==="Enter" && e.target.blur()} style={inputStyle} /></td>
+                <td style={{ padding: "12px 16px", fontWeight: 600, color: "var(--accent)" }}>{mk.internal || 0}</td>
+                <td style={{ padding: "12px 16px", fontWeight: 700, color: "var(--text-primary)" }}>{mk.total || 0}</td>
+                <td style={{ padding: "12px 16px", fontWeight: 700, color: mk.grade ? (mk.grade==="F"?"var(--accent-red)":"var(--accent-green)") : "var(--text-muted)" }}>{mk.grade || "-"}</td>
+              </tr>
+            );
+          })}
+          {students.length === 0 && (
+            <tr>
+               <td colSpan={9} style={{ padding: "16px", textAlign: "center", color: "var(--text-muted)" }}>No students found in this course.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function FacultyView() {
   const { fetchSubjects, fetchMarks, fetchStudentsForSubject } = useMarks();
   const [subjects, setSubjects] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState("");
   const [students, setStudents] = useState([]);
   const [subjectMarks, setSubjectMarks] = useState([]);
-  const [labSubjectMarks, setLabSubjectMarks] = useState([]); // NEW state for Lab mode 
+  const [labSubjectMarks, setLabSubjectMarks] = useState([]); 
 
   useEffect(() => {
     fetchSubjects().then(({ data }) => setSubjects(Array.isArray(data) ? data : data?.data ?? []));
   }, []);
 
   const selectedSubjectData = subjects.find(s => s.id === selectedSubject);
-  const isLab = selectedSubjectData?.subject_type === 'lab';
+  const isLab = selectedSubjectData?.subject_type?.toLowerCase() === 'lab';
 
   useEffect(() => {
     if (!selectedSubject) return;
@@ -467,87 +561,16 @@ function FacultyView() {
         <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 8 }}>Select Subject</label>
         <select value={selectedSubject} onChange={e => setSelectedSubject(e.target.value)} style={{ width: "100%", maxWidth: 400, padding: "10px 14px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--input-bg)", color: "var(--text-primary)", fontSize: "0.95rem", outline: "none" }}>
           <option value="">Choose...</option>
-          {subjects.map(s => <option key={s.id} value={s.id}>{s.name} ({s.code}) {s.subject_type==='lab'?'[LAB]':''}</option>)}
+          {subjects.map(s => <option key={s.id} value={s.id}>{s.name} ({s.code}) {s.subject_type?.toLowerCase()==='lab'?'[LAB]':''}</option>)}
         </select>
       </div>
 
       {selectedSubject && (
-        <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 12, overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.85rem" }}>
-            <thead>
-              {isLab ? (
-                <tr style={{ background: "var(--bg-elevated)", borderBottom: "1px solid var(--border)" }}>
-                  <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>Student</th>
-                  <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>Int.Viva(10)</th>
-                  <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>Obs/Rec(10)</th>
-                  <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>Lab Perf(20)</th>
-                  <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>Ext.Viva(10)</th>
-                  <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>Ext.Rec(10)</th>
-                  <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>Lab Exam(40)</th>
-                  <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--accent)" }}>Int(40)</th>
-                  <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-primary)" }}>Total</th>
-                  <th style={{ padding: "12px 16px", fontWeight: 600 }}>Grade</th>
-                </tr>
-              ) : (
-                <tr style={{ background: "var(--bg-elevated)", borderBottom: "1px solid var(--border)" }}>
-                  <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>Student</th>
-                  <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>M1 Ex (30)</th>
-                  <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>M1 As (10)</th>
-                  <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>M2 Ex (30)</th>
-                  <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>M2 As (10)</th>
-                  <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>Ext (60)</th>
-                  <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--accent)" }}>Int (40)</th>
-                  <th style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-primary)" }}>Total</th>
-                  <th style={{ padding: "12px 16px", fontWeight: 600 }}>Grade</th>
-                </tr>
-              )}
-            </thead>
-            <tbody>
-              {students.map(st => {
-                const inputStyle = { width: 60, padding: "6px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--input-bg)", color: "var(--text-primary)", textAlign: "center", outline: "none" };
-                
-                if (isLab) {
-                  const lm = labSubjectMarks.find(m => m.student_id === st.id) || {};
-                  return (
-                    <tr key={st.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                      <td style={{ padding: "12px 16px", color: "var(--text-primary)", fontWeight: 500, whiteSpace: "nowrap" }}>{st.name}</td>
-                      <td style={{ padding: "8px 16px" }}><input type="number" max="10" min="0" defaultValue={lm.internal_viva||""} onBlur={(e) => handleUpdateLab(st.id, "internal_viva", e.target.value)} onKeyDown={(e) => e.key==="Enter" && e.target.blur()} style={inputStyle} /></td>
-                      <td style={{ padding: "8px 16px" }}><input type="number" max="10" min="0" defaultValue={lm.observation_record||""} onBlur={(e) => handleUpdateLab(st.id, "observation_record", e.target.value)} onKeyDown={(e) => e.key==="Enter" && e.target.blur()} style={inputStyle} /></td>
-                      <td style={{ padding: "8px 16px" }}><input type="number" max="20" min="0" defaultValue={lm.lab_performance||""} onBlur={(e) => handleUpdateLab(st.id, "lab_performance", e.target.value)} onKeyDown={(e) => e.key==="Enter" && e.target.blur()} style={inputStyle} /></td>
-                      <td style={{ padding: "8px 16px" }}><input type="number" max="10" min="0" defaultValue={lm.external_viva||""} onBlur={(e) => handleUpdateLab(st.id, "external_viva", e.target.value)} onKeyDown={(e) => e.key==="Enter" && e.target.blur()} style={inputStyle} /></td>
-                      <td style={{ padding: "8px 16px" }}><input type="number" max="10" min="0" defaultValue={lm.external_record||""} onBlur={(e) => handleUpdateLab(st.id, "external_record", e.target.value)} onKeyDown={(e) => e.key==="Enter" && e.target.blur()} style={inputStyle} /></td>
-                      <td style={{ padding: "8px 16px" }}><input type="number" max="40" min="0" defaultValue={lm.lab_exam||""} onBlur={(e) => handleUpdateLab(st.id, "lab_exam", e.target.value)} onKeyDown={(e) => e.key==="Enter" && e.target.blur()} style={inputStyle} /></td>
-                      <td style={{ padding: "12px 16px", fontWeight: 600, color: "var(--accent)" }}>{lm.internal_total || 0}</td>
-                      <td style={{ padding: "12px 16px", fontWeight: 700, color: "var(--text-primary)" }}>{lm.total || 0}</td>
-                      <td style={{ padding: "12px 16px", fontWeight: 700, color: lm.grade ? (lm.grade==="F"?"var(--accent-red)":"var(--accent-green)") : "var(--text-muted)" }}>{lm.grade || "-"}</td>
-                    </tr>
-                  );
-                }
-
-                // Theory view
-                const mk = subjectMarks.find(m => m.student_id === st.id) || {};
-                return (
-                  <tr key={st.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                    <td style={{ padding: "12px 16px", color: "var(--text-primary)", fontWeight: 500, whiteSpace: "nowrap" }}>{st.name}</td>
-                    <td style={{ padding: "8px 16px" }}><input type="number" max="30" min="0" defaultValue={mk.mid1_exam||""} onBlur={(e) => handleUpdateTheory(st.id, "mid1_exam", e.target.value)} onKeyDown={(e) => e.key==="Enter" && e.target.blur()} style={inputStyle} /></td>
-                    <td style={{ padding: "8px 16px" }}><input type="number" max="10" min="0" defaultValue={mk.mid1_assign||""} onBlur={(e) => handleUpdateTheory(st.id, "mid1_assign", e.target.value)} onKeyDown={(e) => e.key==="Enter" && e.target.blur()} style={inputStyle} /></td>
-                    <td style={{ padding: "8px 16px" }}><input type="number" max="30" min="0" defaultValue={mk.mid2_exam||""} onBlur={(e) => handleUpdateTheory(st.id, "mid2_exam", e.target.value)} onKeyDown={(e) => e.key==="Enter" && e.target.blur()} style={inputStyle} /></td>
-                    <td style={{ padding: "8px 16px" }}><input type="number" max="10" min="0" defaultValue={mk.mid2_assign||""} onBlur={(e) => handleUpdateTheory(st.id, "mid2_assign", e.target.value)} onKeyDown={(e) => e.key==="Enter" && e.target.blur()} style={inputStyle} /></td>
-                    <td style={{ padding: "8px 16px" }}><input type="number" max="60" min="0" defaultValue={mk.external||""} onBlur={(e) => handleUpdateTheory(st.id, "external", e.target.value)} onKeyDown={(e) => e.key==="Enter" && e.target.blur()} style={inputStyle} /></td>
-                    <td style={{ padding: "12px 16px", fontWeight: 600, color: "var(--accent)" }}>{mk.internal || 0}</td>
-                    <td style={{ padding: "12px 16px", fontWeight: 700, color: "var(--text-primary)" }}>{mk.total || 0}</td>
-                    <td style={{ padding: "12px 16px", fontWeight: 700, color: mk.grade ? (mk.grade==="F"?"var(--accent-red)":"var(--accent-green)") : "var(--text-muted)" }}>{mk.grade || "-"}</td>
-                  </tr>
-                );
-              })}
-              {students.length === 0 && (
-                <tr>
-                   <td colSpan={isLab ? 10 : 9} style={{ padding: "16px", textAlign: "center", color: "var(--text-muted)" }}>No students found in this course.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        isLab ? (
+          <LabFacultyTable students={students} subjectId={selectedSubject} labSubjectMarks={labSubjectMarks} handleUpdateLab={handleUpdateLab} />
+        ) : (
+          <TheoryFacultyTable students={students} subjectId={selectedSubject} subjectMarks={subjectMarks} handleUpdateTheory={handleUpdateTheory} />
+        )
       )}
     </div>
   );
