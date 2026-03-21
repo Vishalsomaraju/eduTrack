@@ -8,9 +8,10 @@ import AttendancePage from "@/pages/AttendancePage";
 import MarksPage from "@/pages/MarksPage";
 import AnalyticsPage from "@/pages/AnalyticsPage";
 import ProfilePage from "@/pages/ProfilePage";
+import CoursesPage from "@/pages/CoursesPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import ProtectedRoute from "@/components/layout/ProtectedRoute";
-import PageShell from "@/components/layout/PageShell";
+import AppShell from "@/components/layout/AppShell";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 
 // ── Stub pages (full implementations in Month 2) ──────────────
@@ -59,9 +60,9 @@ function AppContent() {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <PageShell>
+              <AppShell>
                 <DashboardPage />
-              </PageShell>
+              </AppShell>
             </ProtectedRoute>
           }
         />
@@ -70,9 +71,9 @@ function AppContent() {
           path="/attendance"
           element={
             <ProtectedRoute>
-              <PageShell>
+              <AppShell>
                 <AttendancePage />
-              </PageShell>
+              </AppShell>
             </ProtectedRoute>
           }
         />
@@ -81,9 +82,9 @@ function AppContent() {
           path="/marks"
           element={
             <ProtectedRoute>
-              <PageShell>
+              <AppShell>
                 <MarksPage />
-              </PageShell>
+              </AppShell>
             </ProtectedRoute>
           }
         />
@@ -92,9 +93,9 @@ function AppContent() {
           path="/analytics"
           element={
             <ProtectedRoute>
-              <PageShell>
+              <AppShell>
                 <AnalyticsPage />
-              </PageShell>
+              </AppShell>
             </ProtectedRoute>
           }
         />
@@ -103,9 +104,20 @@ function AppContent() {
           path="/profile"
           element={
             <ProtectedRoute>
-              <PageShell>
+              <AppShell>
                 <ProfilePage />
-              </PageShell>
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/courses"
+          element={
+            <ProtectedRoute>
+              <AppShell>
+                <CoursesPage />
+              </AppShell>
             </ProtectedRoute>
           }
         />
@@ -114,9 +126,9 @@ function AppContent() {
           path="/students"
           element={
             <ProtectedRoute roles={["admin"]}>
-              <PageShell>
+              <AppShell>
                 <StubPage title="Students" />
-              </PageShell>
+              </AppShell>
             </ProtectedRoute>
           }
         />
@@ -125,9 +137,9 @@ function AppContent() {
           path="/faculty"
           element={
             <ProtectedRoute roles={["admin"]}>
-              <PageShell>
+              <AppShell>
                 <StubPage title="Faculty" />
-              </PageShell>
+              </AppShell>
             </ProtectedRoute>
           }
         />
@@ -136,9 +148,9 @@ function AppContent() {
           path="/subjects"
           element={
             <ProtectedRoute roles={["admin"]}>
-              <PageShell>
+              <AppShell>
                 <StubPage title="Subjects" />
-              </PageShell>
+              </AppShell>
             </ProtectedRoute>
           }
         />

@@ -31,7 +31,7 @@ export function useMarks() {
   async function fetchSubjects() {
     try {
       const data = await api.get("/subjects/");
-      return { data, error: null };
+      return { data: Array.isArray(data) ? data : (data?.data ?? []), error: null };
     } catch (error) {
       return { data: null, error };
     }
@@ -40,7 +40,7 @@ export function useMarks() {
   async function fetchMarks(subjectId) {
     try {
       const data = await api.get(`/marks/${subjectId}`);
-      return { data, error: null };
+      return { data: Array.isArray(data) ? data : (data?.data ?? []), error: null };
     } catch (error) {
       return { data: null, error };
     }
@@ -49,7 +49,8 @@ export function useMarks() {
   async function fetchMyMarks(subjectId) {
     try {
       const all = await api.get("/marks/student/me");
-      const data = (all || []).filter((m) => m.subject_id === subjectId);
+      const arr = Array.isArray(all) ? all : (all?.data ?? []);
+      const data = arr.filter((m) => m.subject_id === subjectId);
       return { data, error: null };
     } catch (error) {
       return { data: null, error };
@@ -59,7 +60,7 @@ export function useMarks() {
   async function fetchAllMyMarks() {
     try {
       const data = await api.get("/marks/student/me");
-      return { data, error: null };
+      return { data: Array.isArray(data) ? data : (data?.data ?? []), error: null };
     } catch (error) {
       return { data: null, error };
     }
@@ -88,7 +89,7 @@ export function useMarks() {
   async function fetchStudentsForSubject(subjectId) {
     try {
       const data = await api.get(`/subjects/${subjectId}/students`);
-      return { data, error: null };
+      return { data: Array.isArray(data) ? data : (data?.data ?? []), error: null };
     } catch (error) {
       return { data: null, error };
     }

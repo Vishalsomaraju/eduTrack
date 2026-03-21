@@ -4,7 +4,7 @@
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 
 const VALUE_COLORS = {
-  default: "var(--text-primary)",
+  default: "var(--accent)",
   green: "var(--accent-green)",
   red: "var(--accent-red)",
   amber: "var(--accent-amber)",

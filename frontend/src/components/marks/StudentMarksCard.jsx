@@ -6,10 +6,21 @@ import { Badge, Card } from "@/components/ui";
 import {
   computeGrade,
   computePercentage,
-  gradeBadgeVariant,
-  percentageColor,
   useMarks,
 } from "@/hooks/useMarks";
+
+// ── Grade Badge styling ────────────────────────────────────────────────────
+function gradeBadgeStyle(grade) {
+  const map = {
+    'O':  { bg: 'var(--accent-green-bg)', color: 'var(--accent-green)', border: 'var(--accent-green-border)' },
+    'A+': { bg: 'var(--accent-green-bg)', color: 'var(--accent-green)', border: 'var(--accent-green-border)' },
+    'A':  { bg: 'var(--accent-blue-bg)', color: 'var(--accent-blue)', border: 'var(--accent-blue-border)' },
+    'B+': { bg: 'var(--accent-blue-bg)', color: 'var(--accent-blue)', border: 'var(--accent-blue-border)' },
+    'B':  { bg: 'var(--accent-amber-bg)', color: 'var(--accent-amber)', border: 'var(--accent-amber-border)' },
+    'F':  { bg: 'var(--accent-red-bg)', color: 'var(--accent-red)', border: 'var(--accent-red-border)' },
+  };
+  return map[grade] || map['B'];
+}
 
 // ── Skeleton shimmer row ───────────────────────────────────────────────────
 function SkeletonSubject() {
@@ -98,9 +109,9 @@ function MarkRow({ label, mark }) {
       <span
         style={{
           fontFamily: "var(--font-display)",
-          fontWeight: 700,
+          fontWeight: 600,
           fontSize: "0.875rem",
-          color: percentageColor(pct),
+          color: "var(--text-primary)",
         }}
       >
         {mark.score}/{mark.max_score}
@@ -109,14 +120,23 @@ function MarkRow({ label, mark }) {
         style={{
           fontFamily: "var(--font-body)",
           fontSize: "0.8rem",
-          color: percentageColor(pct),
+          color: "var(--text-secondary)",
         }}
       >
         {pct}%
       </span>
-      <Badge variant={gradeBadgeVariant(grade)} size="sm">
+      <span style={{
+        background: gradeBadgeStyle(grade).bg,
+        color: gradeBadgeStyle(grade).color,
+        border: `1px solid ${gradeBadgeStyle(grade).border}`,
+        borderRadius: 9999,
+        padding: '2px 8px',
+        fontSize: '0.7rem',
+        fontWeight: 700,
+        fontFamily: 'var(--font-display)',
+      }}>
         {grade}
-      </Badge>
+      </span>
     </div>
   );
 }
@@ -129,16 +149,24 @@ function ProgressBar({ pct }) {
       <div
         style={{
           display: "flex",
-          justifyContent: "flex-end",
+          alignItems: "center",
+          justifyContent: "space-between",
           marginBottom: 4,
         }}
       >
         <span
           style={{
-            fontFamily: "var(--font-display)",
-            fontWeight: 700,
             fontSize: "0.75rem",
-            color: fillColor,
+            color: "var(--text-muted)",
+          }}
+        >
+          Overall
+        </span>
+        <span
+          style={{
+            fontSize: "0.75rem",
+            color: "var(--text-secondary)",
+            fontWeight: 600,
           }}
         >
           {pct}%
@@ -158,7 +186,7 @@ function ProgressBar({ pct }) {
             width: `${Math.min(pct, 100)}%`,
             borderRadius: 999,
             background: fillColor,
-            transition: "width 500ms ease",
+            transition: "width 600ms ease",
           }}
         />
       </div>
@@ -358,15 +386,24 @@ export default function StudentMarksCard({ compact = false, subjectMap = {} }) {
                       fontFamily: "var(--font-display)",
                       fontWeight: 700,
                       fontSize: "2rem",
-                      color: percentageColor(overallPct),
+                      color: "var(--text-primary)",
                       lineHeight: 1,
                     }}
                   >
                     {overallPct}%
                   </span>
-                  <Badge variant={gradeBadgeVariant(overallGrade)}>
+                  <span style={{
+                    background: gradeBadgeStyle(overallGrade).bg,
+                    color: gradeBadgeStyle(overallGrade).color,
+                    border: `1px solid ${gradeBadgeStyle(overallGrade).border}`,
+                    borderRadius: 9999,
+                    padding: '2px 8px',
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    fontFamily: 'var(--font-display)',
+                  }}>
                     {overallGrade}
-                  </Badge>
+                  </span>
                 </div>
               </div>
             </div>

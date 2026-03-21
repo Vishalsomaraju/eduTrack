@@ -23,7 +23,7 @@
   --border-strong: rgba(0, 0, 0, 0.16);
 
   /* Accent — warm terracotta */
-  --accent: #8f5538;
+  --accent: #C57D5E;
   --accent-hover: #7a4528;
   --accent-subtle: rgba(143, 85, 56, 0.1);
   --accent-glow: rgba(143, 85, 56, 0.18);
@@ -90,7 +90,7 @@
   --border-strong: rgba(255, 255, 255, 0.14);
 
   /* Accent — warm terracotta */
-  --accent: #8f5538;
+  --accent: #C57D5E;
   --accent-hover: #7a4528;
   --accent-subtle: rgba(143, 85, 56, 0.1);
   --accent-glow: rgba(143, 85, 56, 0.18);

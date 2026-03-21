@@ -12,14 +12,6 @@ router = APIRouter(
   prefix='/lab-marks', tags=['lab-marks']
 )
 
-# ← /student/me MUST come first
-@router.get('/student/me',
-  response_model=list[LabMarksResponse])
-async def get_my_lab_marks(
-  user: dict = Depends(get_current_user)
-):
-  return service.get_my_lab_marks(user['id'])
-
 @router.get('/{subject_id}',
   response_model=list[LabMarksResponse])
 async def get_lab_marks(
@@ -29,6 +21,13 @@ async def get_lab_marks(
   return service.get_lab_marks_for_subject(
     subject_id
   )
+
+@router.get('/student/me',
+  response_model=list[LabMarksResponse])
+async def get_my_lab_marks(
+  user: dict = Depends(get_current_user)
+):
+  return service.get_my_lab_marks(user['id'])
 
 @router.post('/',
   response_model=LabMarksResponse,

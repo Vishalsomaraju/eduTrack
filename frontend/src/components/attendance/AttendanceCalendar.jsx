@@ -255,6 +255,8 @@ export default function AttendanceCalendar({
           gap: 16,
           marginTop: 16,
           flexWrap: "wrap",
+          marginLeft: 4,
+          padding: "4px 8px",
         }}
       >
         {[

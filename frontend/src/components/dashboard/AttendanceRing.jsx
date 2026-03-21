@@ -3,9 +3,6 @@
 
 import { motion } from "framer-motion";
 
-function ringColor(pct) {
-  return "var(--accent)";
-}
 
 export default function AttendanceRing({
   percentage,
@@ -19,7 +16,6 @@ export default function AttendanceRing({
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset =
     circumference - (Math.min(percentage, 100) / 100) * circumference;
-  const stroke = ringColor(percentage);
 
   return (
     <div
@@ -39,7 +35,7 @@ export default function AttendanceRing({
             cy={cy}
             r={radius}
             fill="none"
-            stroke="var(--border)"
+            stroke="var(--bg-elevated)"
             strokeWidth={6}
           />
           {/* Progress */}
@@ -48,7 +44,7 @@ export default function AttendanceRing({
             cy={cy}
             r={radius}
             fill="none"
-            stroke={stroke}
+            stroke="var(--accent)"
             strokeWidth={6}
             strokeLinecap="round"
             strokeDasharray={circumference}

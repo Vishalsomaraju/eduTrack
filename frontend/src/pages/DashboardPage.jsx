@@ -230,7 +230,7 @@ function StudentDashboard() {
   const firstName = profile?.name?.split(" ")[0] ?? "there";
 
   return (
-    <div style={{ padding: "clamp(1rem, 2vw, 1.5rem)" }}>
+    <div>
       {/* ── Greeting header ───────────────────────────────────────── */}
       <div style={{ marginBottom: 24 }}>
         <h1

@@ -106,7 +106,7 @@ function AdminFacultyAnalytics({ role }) {
       : "Institution-wide performance insights";
 
   return (
-    <div style={{ padding: "clamp(1rem, 2vw, 1.5rem)" }}>
+    <div>
       {/* Page header */}
       <div style={{ marginBottom: 24 }}>
         <h2
