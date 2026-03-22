@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
+from collections import defaultdict
 from app.attendance.schemas import (
     AttendanceCreate, AttendanceUpdate,
     AttendanceResponse, AttendanceSummary
@@ -8,7 +9,6 @@ from app.auth.dependencies import (
     get_current_user, require_faculty
 )
 from app.utils.supabase import admin_client
-from collections import defaultdict
 
 router = APIRouter(
     prefix="/attendance", tags=["attendance"]
@@ -34,13 +34,11 @@ async def get_my_attendance_summary_all_subjects(
     user: dict = Depends(get_current_user)
 ):
     """
-    Returns attendance summary for ALL enrolled subjects in a single query.
-    Replaces N individual /attendance/{subject_id}/summary calls on the dashboard.
+    Batch: returns attendance summary for ALL enrolled subjects in one call.
     Response: { [subject_id]: { present, absent, late, total, percentage, at_risk } }
     """
     student_id = user["id"]
 
-    # 1. Get enrolled subject IDs for this student
     enroll_res = admin_client.table("enrollments")\
         .select("subject_id")\
         .eq("student_id", student_id)\
@@ -50,14 +48,12 @@ async def get_my_attendance_summary_all_subjects(
     if not subject_ids:
         return {}
 
-    # 2. Fetch ALL attendance records for this student in one query
     att_res = admin_client.table("attendance")\
         .select("subject_id, status")\
         .eq("student_id", student_id)\
         .in_("subject_id", subject_ids)\
         .execute()
 
-    # 3. Aggregate per subject in Python (no N+1 queries)
     buckets: dict = defaultdict(lambda: {"present": 0, "absent": 0, "late": 0, "total": 0})
     for row in (att_res.data or []):
         sid = row["subject_id"]
@@ -69,7 +65,7 @@ async def get_my_attendance_summary_all_subjects(
     result = {}
     for sid in subject_ids:
         b = buckets[sid]
-        total = b["total"]
+        total   = b["total"]
         present = b["present"]
         pct = round(present / total * 100, 2) if total > 0 else 0.0
         result[sid] = {
@@ -81,7 +77,6 @@ async def get_my_attendance_summary_all_subjects(
             "percentage": pct,
             "at_risk":    pct < 75.0,
         }
-
     return result
 
 
@@ -92,6 +87,7 @@ async def get_attendance(
 ):
     return service.get_attendance(subject_id)
 
+
 @router.get("/{subject_id}/student/me", response_model=list[AttendanceResponse])
 async def get_my_attendance(
     subject_id: str,
@@ -99,26 +95,37 @@ async def get_my_attendance(
 ):
     return service.get_my_attendance(subject_id, user["id"])
 
-@router.get("/{subject_id}/summary", response_model=AttendanceSummary)
+
+@router.get("/{subject_id}/summary")
 async def get_summary(
     subject_id: str,
     student_id: str = None,
     user: dict = Depends(get_current_user)
 ):
+    """
+    Student role            → own summary only (single object)
+    Faculty/Admin + id      → that student's summary (single object)
+    Faculty/Admin, no id    → ALL students' summaries (array) — no more 400
+    """
     if user["role"] == "student":
-        student_id = user["id"]
-    if not student_id:
-        raise HTTPException(400, "student_id required")
-    return service.get_summary(subject_id, student_id)
+        return service.get_summary(subject_id, user["id"])
 
-@router.post("/",
-    response_model=AttendanceResponse,
-    status_code=201)
+    if user["role"] in ("faculty", "admin"):
+        if student_id:
+            return service.get_summary(subject_id, student_id)
+        # No student_id → return all students for this subject as array
+        return service.get_all_summaries(subject_id)
+
+    raise HTTPException(403, "Unauthorized")
+
+
+@router.post("/", response_model=AttendanceResponse, status_code=201)
 async def mark_attendance(
     data: AttendanceCreate,
     user: dict = Depends(require_faculty)
 ):
     return service.mark_attendance(data.model_dump())
+
 
 @router.put("/{record_id}", response_model=AttendanceResponse)
 async def update_attendance(

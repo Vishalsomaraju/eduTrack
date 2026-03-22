@@ -2,11 +2,9 @@ from datetime import date, timedelta
 from collections import defaultdict
 from app.utils.supabase import admin_client
 
-# Thresholds (match frontend useMarks.js)
 AT_RISK_ATTENDANCE = 75.0
 AT_RISK_MARKS = 40.0
 
-# Grade scale (match frontend useMarks.js)
 def compute_grade(percentage: float) -> str:
     if percentage >= 90: return "O"
     if percentage >= 75: return "A+"
@@ -15,10 +13,15 @@ def compute_grade(percentage: float) -> str:
     if percentage >= 40: return "B"
     return "F"
 
+def _compute_total(row: dict) -> float:
+    mid1 = row.get('mid1_exam', 0) + row.get('mid1_assign', 0)
+    mid2 = row.get('mid2_exam', 0) + row.get('mid2_assign', 0)
+    internal = (mid1 + mid2) / 2
+    return round(internal + row.get('external', 0), 2)
+
 # ─── Attendance Trend ───────────────────────
 def attendance_trend(subject_id: str, days: int = 30) -> list[dict]:
     since = date.today() - timedelta(days=days)
-
     res = admin_client.table("attendance")\
         .select("date, status")\
         .eq("subject_id", subject_id)\
@@ -26,11 +29,9 @@ def attendance_trend(subject_id: str, days: int = 30) -> list[dict]:
         .order("date")\
         .execute()
 
-    # Group by date
-    by_date: dict = defaultdict(lambda: {"present": 0, "absent": 0, "late": 0})
+    by_date = defaultdict(lambda: {"present": 0, "absent": 0, "late": 0})
     for row in (res.data or []):
-        d = row["date"]
-        by_date[d][row["status"]] += 1
+        by_date[row["date"]][row["status"]] += 1
 
     result = []
     for d, counts in sorted(by_date.items()):
@@ -49,23 +50,19 @@ def attendance_trend(subject_id: str, days: int = 30) -> list[dict]:
 # ─── Grade Distribution ─────────────────────
 def grade_distribution(subject_id: str) -> list[dict]:
     res = admin_client.table("marks")\
-        .select("student_id, score, max_score")\
+        .select("student_id, mid1_exam, mid1_assign, mid2_exam, mid2_assign, external")\
         .eq("subject_id", subject_id)\
         .execute()
 
-    # Aggregate per student (sum score / sum max)
-    student_totals: dict = defaultdict(lambda: {"score": 0.0, "max": 0.0})
+    grade_counts = defaultdict(int)
+    student_ids = set()
     for row in (res.data or []):
         sid = row["student_id"]
-        student_totals[sid]["score"] += row["score"]
-        student_totals[sid]["max"] += row["max_score"]
+        student_ids.add(sid)
+        total = _compute_total(row)
+        grade_counts[compute_grade(total)] += 1
 
-    grade_counts: dict = defaultdict(int)
-    for totals in student_totals.values():
-        pct = (totals["score"] / totals["max"] * 100) if totals["max"] else 0.0
-        grade_counts[compute_grade(pct)] += 1
-
-    total_students = len(student_totals)
+    total_students = len(student_ids)
     grades = ["O", "A+", "A", "B+", "B", "F"]
     return [
         {
@@ -78,7 +75,6 @@ def grade_distribution(subject_id: str) -> list[dict]:
 
 # ─── At-Risk Students ───────────────────────
 def at_risk_students(subject_id: str) -> list[dict]:
-    # Get all enrolled students
     enroll = admin_client.table("enrollments")\
         .select("student_id, profiles(id,name,email)")\
         .eq("subject_id", subject_id)\
@@ -92,30 +88,26 @@ def at_risk_students(subject_id: str) -> list[dict]:
     if not students:
         return []
 
-    # Attendance per student
     att = admin_client.table("attendance")\
         .select("student_id, status")\
         .eq("subject_id", subject_id)\
         .execute()
 
-    att_totals: dict = defaultdict(lambda: {"present": 0, "total": 0})
+    att_totals = defaultdict(lambda: {"present": 0, "total": 0})
     for row in (att.data or []):
         sid = row["student_id"]
         att_totals[sid]["total"] += 1
         if row["status"] == "present":
             att_totals[sid]["present"] += 1
 
-    # Marks per student
     marks = admin_client.table("marks")\
-        .select("student_id, score, max_score")\
+        .select("student_id, mid1_exam, mid1_assign, mid2_exam, mid2_assign, external")\
         .eq("subject_id", subject_id)\
         .execute()
 
-    marks_totals: dict = defaultdict(lambda: {"score": 0.0, "max": 0.0})
+    marks_totals = {}
     for row in (marks.data or []):
-        sid = row["student_id"]
-        marks_totals[sid]["score"] += row["score"]
-        marks_totals[sid]["max"] += row["max_score"]
+        marks_totals[row["student_id"]] = _compute_total(row)
 
     result = []
     for sid, profile in students.items():
@@ -124,10 +116,7 @@ def at_risk_students(subject_id: str) -> list[dict]:
         present = att_data.get("present", 0)
         att_pct = round(present / total * 100, 2) if total else 0.0
 
-        m = marks_totals.get(sid, {})
-        marks_pct = round(
-            m["score"] / m["max"] * 100, 2
-        ) if m.get("max") else None
+        marks_pct = marks_totals.get(sid, None)
 
         att_risk = att_pct < AT_RISK_ATTENDANCE
         marks_risk = marks_pct is not None and marks_pct < AT_RISK_MARKS
@@ -135,12 +124,7 @@ def at_risk_students(subject_id: str) -> list[dict]:
         if not att_risk and not marks_risk:
             continue
 
-        if att_risk and marks_risk:
-            reason = "both"
-        elif att_risk:
-            reason = "attendance"
-        else:
-            reason = "marks"
+        reason = "both" if (att_risk and marks_risk) else ("attendance" if att_risk else "marks")
 
         result.append({
             "student_id": sid,
@@ -158,31 +142,41 @@ def subject_comparison() -> list[dict]:
     subjects = admin_client.table("subjects")\
         .select("id, name, code")\
         .execute()
+    if not subjects.data:
+        return []
+
+    subject_ids = [s["id"] for s in subjects.data]
+
+    att_res = admin_client.table("attendance")\
+        .select("subject_id, status")\
+        .in_("subject_id", subject_ids)\
+        .execute()
+
+    marks_res = admin_client.table("marks")\
+        .select("subject_id, student_id, mid1_exam, mid1_assign, mid2_exam, mid2_assign, external")\
+        .in_("subject_id", subject_ids)\
+        .execute()
+
+    # Aggregate attendance per subject
+    att_map = defaultdict(lambda: {"present": 0, "total": 0})
+    for row in (att_res.data or []):
+        sid = row["subject_id"]
+        att_map[sid]["total"] += 1
+        if row["status"] == "present":
+            att_map[sid]["present"] += 1
+
+    # Aggregate marks per subject (one row per student, use total)
+    marks_map = defaultdict(list)
+    for row in (marks_res.data or []):
+        marks_map[row["subject_id"]].append(_compute_total(row))
 
     result = []
-    for subj in (subjects.data or []):
+    for subj in subjects.data:
         sid = subj["id"]
-
-        # Avg attendance
-        att = admin_client.table("attendance")\
-            .select("status")\
-            .eq("subject_id", sid)\
-            .execute()
-        records = att.data or []
-        total = len(records)
-        present = sum(1 for r in records if r["status"] == "present")
-        avg_att = round(present / total * 100, 2) if total else 0.0
-
-        # Avg marks
-        marks = admin_client.table("marks")\
-            .select("score, max_score")\
-            .eq("subject_id", sid)\
-            .execute()
-        mdata = marks.data or []
-        total_score = sum(r["score"] for r in mdata)
-        total_max = sum(r["max_score"] for r in mdata)
-        avg_marks = round(total_score / total_max * 100, 2) if total_max else 0.0
-
+        a = att_map[sid]
+        avg_att = round(a["present"] / a["total"] * 100, 2) if a["total"] else 0.0
+        totals = marks_map[sid]
+        avg_marks = round(sum(totals) / len(totals), 2) if totals else 0.0
         result.append({
             "subject_id": sid,
             "subject_name": subj["name"],

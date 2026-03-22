@@ -47,19 +47,24 @@ export default function SubjectsPage() {
         .from("subjects")
         .select("*")
         .order("code", { ascending: true });
-      
+
       // Fetch faculty list
       const facData = await api.get("/admin/users?role=faculty");
-      
+
       // Fetch deadlines
-      const { data: dedData } = await supabase
-        .from("elective_deadlines")
-        .select("*")
-        .order("slot", { ascending: true });
+      const dlData = await api.get("/courses/deadlines");
+      if (dlData) {
+        // Convert { PE1: "...", PE2: "..." } object to array format
+        setDeadlines(
+          Object.entries(dlData).map(([slot, deadline]) => ({
+            slot,
+            deadline,
+          })),
+        );
+      }
 
       if (subData) setSubjects(subData);
       if (facData) setFaculty(facData);
-      if (dedData) setDeadlines(dedData);
     } catch (err) {
       console.error("Error fetching data:", err);
     } finally {
@@ -87,8 +92,8 @@ export default function SubjectsPage() {
       // Update local state
       setSubjects((prev) =>
         prev.map((s) =>
-          s.id === subjectId ? { ...s, faculty_id: payload } : s
-        )
+          s.id === subjectId ? { ...s, faculty_id: payload } : s,
+        ),
       );
       setAssignmentSuccess(subjectId);
       setTimeout(() => setAssignmentSuccess(null), 1500);
@@ -227,9 +232,9 @@ export default function SubjectsPage() {
       setEditingDeadlineSlot(null);
       return;
     }
-    
+
     savingDeadlineRef.current = true;
-    
+
     // Add :00Z back for ISO compatibility if needed, or backend can parse ISO format.
     const isoDate = new Date(deadlineValue).toISOString();
     try {
@@ -240,7 +245,7 @@ export default function SubjectsPage() {
         const exists = prev.find((p) => p.slot === slot);
         if (exists) {
           return prev.map((p) =>
-            p.slot === slot ? { ...p, deadline: isoDate } : p
+            p.slot === slot ? { ...p, deadline: isoDate } : p,
           );
         }
         return [...prev, { slot, deadline: isoDate }];
@@ -254,20 +259,59 @@ export default function SubjectsPage() {
     }
   };
 
-  const defaultSlots = ["professional_elective_1", "professional_elective_2", "open_elective_1"];
-  const mergedDeadlines = defaultSlots.map((slot) => {
+  const SEMESTER_ELECTIVE_SLOTS = {
+    5: [
+      { slot: "PE1", label: "Professional Elective I" },
+      { slot: "PE2", label: "Professional Elective II" },
+    ],
+    6: [
+      { slot: "OE1", label: "Open Elective I" },
+      { slot: "PE3", label: "Professional Elective III" },
+    ],
+    7: [
+      { slot: "PE4", label: "Professional Elective IV" },
+      { slot: "PE5", label: "Professional Elective V" },
+      { slot: "OE2", label: "Open Elective II" },
+    ],
+    8: [
+      { slot: "PE6", label: "Professional Elective VI" },
+      { slot: "OE3", label: "Open Elective III" },
+    ],
+  };
+
+  const activeSemSlots = SEMESTER_ELECTIVE_SLOTS[activeTab] || [];
+  const mergedDeadlines = activeSemSlots.map(({ slot, label }) => {
     const existing = deadlines.find((d) => d.slot === slot);
-    return existing || { slot, deadline: null };
+    return existing ? { ...existing, label } : { slot, label, deadline: null };
   });
 
   const deadlineColumns = [
     {
       key: "slot",
       label: "Slot",
-      render: (val) => (
-        <span className="font-display font-semibold uppercase tracking-wider text-xs">
-          {val.replace(/_/g, " ")}
-        </span>
+      render: (val, row) => (
+        <div>
+          <span
+            style={{
+              fontFamily: "var(--font-display)",
+              fontWeight: 700,
+              fontSize: "0.8rem",
+              color: "var(--accent)",
+            }}
+          >
+            {val}
+          </span>
+          <div
+            style={{
+              fontFamily: "var(--font-body)",
+              fontSize: "0.75rem",
+              color: "var(--text-muted)",
+              marginTop: 2,
+            }}
+          >
+            {row.label}
+          </div>
+        </div>
       ),
     },
     {
@@ -300,7 +344,9 @@ export default function SubjectsPage() {
           );
         }
         return (
-          <span style={{ color: val ? "var(--text-primary)" : "var(--text-muted)" }}>
+          <span
+            style={{ color: val ? "var(--text-primary)" : "var(--text-muted)" }}
+          >
             {val ? new Date(val).toLocaleString() : "Not set"}
           </span>
         );
@@ -322,13 +368,19 @@ export default function SubjectsPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-8 h-full">
+    <div className="flex flex-col gap-6 sm:gap-8 h-full p-4 sm:p-6 md:p-8 max-w-[1600px] mx-auto w-full">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-display font-bold" style={{ color: "var(--text-primary)" }}>
+          <h1
+            className="text-2xl font-display font-bold"
+            style={{ color: "var(--text-primary)" }}
+          >
             Subject Management
           </h1>
-          <p className="text-sm font-body mt-1" style={{ color: "var(--text-muted)" }}>
+          <p
+            className="text-sm font-body mt-1"
+            style={{ color: "var(--text-muted)" }}
+          >
             Assign faculty and manage elective deadlines.
           </p>
         </div>
@@ -336,21 +388,33 @@ export default function SubjectsPage() {
 
       <div className="flex flex-col gap-6">
         {/* Semester Tabs */}
-        <div className="flex flex-wrap gap-2">
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            marginBottom: 24,
+            overflowX: "auto",
+            paddingBottom: 8,
+          }}
+        >
           {SEMESTERS.map((sem) => (
             <button
               key={sem.value}
               onClick={() => setActiveTab(sem.value)}
-              className="px-4 py-2 text-sm font-body font-medium rounded-lg transition-all"
               style={{
+                padding: "6px 16px",
+                borderRadius: 9999,
+                border:
+                  activeTab === sem.value ? "none" : "1px solid var(--border)",
                 background:
-                  activeTab === sem.value
-                    ? "var(--accent)"
-                    : "var(--bg-elevated)",
+                  activeTab === sem.value ? "var(--accent)" : "transparent",
                 color:
-                  activeTab === sem.value
-                    ? "#fff"
-                    : "var(--text-primary)",
+                  activeTab === sem.value ? "#fff" : "var(--text-secondary)",
+                fontFamily: "var(--font-display)",
+                fontWeight: 600,
+                fontSize: "0.85rem",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
               }}
             >
               {sem.label}
@@ -361,7 +425,10 @@ export default function SubjectsPage() {
         {/* Subjects Table */}
         <div
           className="rounded-xl overflow-hidden shadow-sm"
-          style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
+          style={{
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border)",
+          }}
         >
           <Table
             data={currentSubjects}
@@ -372,22 +439,29 @@ export default function SubjectsPage() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 mt-6 max-w-3xl">
-        <h2 className="text-lg font-display font-bold" style={{ color: "var(--text-primary)" }}>
-          Elective Registration Deadlines
-        </h2>
-        
-        <div
-          className="rounded-xl overflow-hidden shadow-sm"
-          style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
-        >
-          <Table
-            data={mergedDeadlines}
-            columns={deadlineColumns}
-            loading={loading}
-          />
+      {activeSemSlots.length > 0 && (
+        <div className="flex flex-col gap-4 mt-6 max-w-3xl">
+          <h2
+            className="text-lg font-display font-bold"
+            style={{ color: "var(--text-primary)" }}
+          >
+            Elective Registration Deadlines
+          </h2>
+          <div
+            className="rounded-xl overflow-hidden shadow-sm"
+            style={{
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border)",
+            }}
+          >
+            <Table
+              data={mergedDeadlines}
+              columns={deadlineColumns}
+              loading={loading}
+            />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -12,6 +12,9 @@ import {
   BarChart2,
   UserCircle,
   BookOpen,
+  Users,
+  Briefcase,
+  Layers,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useTheme } from "@/hooks/useTheme";
@@ -29,6 +32,18 @@ export default function TopNav() {
   const { profile } = useAuthStore();
   const { theme, toggleTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const isAdmin = profile?.role === "admin";
+  const displayedItems = [
+    ...NAV_ITEMS,
+    ...(isAdmin
+      ? [
+          { to: "/students", label: "Students", icon: Users },
+          { to: "/faculty", label: "Faculty", icon: Briefcase },
+          { to: "/subjects", label: "Subjects", icon: Layers },
+        ]
+      : []),
+  ];
 
   const initials =
     profile?.name
@@ -103,9 +118,11 @@ export default function TopNav() {
             alignItems: "center",
             gap: 4,
             flex: 1,
+            overflowX: "auto",
+            scrollbarWidth: "none",
           }}
         >
-          {NAV_ITEMS.map((item) => (
+          {displayedItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -240,7 +257,7 @@ export default function TopNav() {
             boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
           }}
         >
-          {NAV_ITEMS.map((item) => (
+          {displayedItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}

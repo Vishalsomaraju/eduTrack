@@ -19,6 +19,7 @@ export default function AddUserModal({
     department: "CSE",
     password: "",
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -37,22 +38,21 @@ export default function AddUserModal({
     const payload = {
       name: formData.name,
       email: formData.email,
-      role: role,
-      password: cachedPassword ? cachedPassword : formData.password,
+      role,
+      password: cachedPassword || formData.password,
     };
 
     if (isStudent) {
       payload.entry_semester = parseInt(formData.entry_semester, 10);
-    } else {
-      // Faculty might use designation/department later if we extend backend
-      // Right now backend just takes basic info, but UI requires it
     }
 
     try {
       await onSuccess(payload);
+
       if (!cachedPassword && formData.password) {
         onPasswordCached(formData.password);
       }
+
       setFormData({
         name: "",
         email: "",
@@ -77,6 +77,7 @@ export default function AddUserModal({
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Overlay */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -84,30 +85,63 @@ export default function AddUserModal({
             onClick={onClose}
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
           />
+
+          {/* Modal */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -20 }}
-            className="relative w-full max-w-md p-6 overflow-hidden rounded-2xl shadow-xl"
+            transition={{ duration: 0.2 }}
+            className="relative w-[95%] sm:w-full max-w-md mx-auto"
             style={{
               background: "var(--bg-surface)",
               border: "1px solid var(--border)",
+              borderRadius: 16,
+              padding: "24px",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
             }}
           >
-            <h3
-              className="mb-4 text-xl font-display font-bold"
-              style={{ color: "var(--text-primary)" }}
+            {/* Header */}
+            <h2
+              style={{
+                fontFamily: "var(--font-display)",
+                fontWeight: 700,
+                fontSize: "1.2rem",
+                color: "var(--text-primary)",
+              }}
             >
               Add {isStudent ? "Student" : "Faculty"}
-            </h3>
+            </h2>
 
+            <p
+              style={{
+                fontSize: "0.8rem",
+                color: "var(--text-muted)",
+                marginBottom: 16,
+              }}
+            >
+              Create a new {isStudent ? "student" : "faculty"} account
+            </p>
+
+            {/* Error */}
             {error && (
-              <div className="p-3 mb-4 rounded-lg text-sm font-body bg-red-500/10 text-red-500 border border-red-500/20">
+              <div
+                style={{
+                  background: "rgba(255,80,80,0.08)",
+                  border: "1px solid var(--accent-red)",
+                  color: "var(--accent-red)",
+                  borderRadius: 10,
+                  padding: "10px 12px",
+                  fontSize: "0.8rem",
+                  marginBottom: 16,
+                }}
+              >
                 {error}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
               <Input
                 label="Full Name"
                 name="name"
@@ -128,26 +162,33 @@ export default function AddUserModal({
               />
 
               {isStudent ? (
-                <div className="flex flex-col gap-1">
+                <div>
                   <label
-                    className="font-display font-semibold text-[0.7rem] uppercase tracking-wide"
-                    style={{ color: "var(--text-muted)" }}
+                    style={{
+                      fontSize: "0.7rem",
+                      color: "var(--text-muted)",
+                      marginBottom: 6,
+                      display: "block",
+                    }}
                   >
-                    Entry Semester
+                    ENTRY SEMESTER
                   </label>
                   <select
                     name="entry_semester"
                     value={formData.entry_semester}
                     onChange={handleChange}
-                    className="w-full h-[42px] px-3 rounded-lg text-sm font-body outline-none transition-colors"
                     style={{
+                      width: "100%",
+                      height: "42px",
+                      padding: "0 14px",
+                      borderRadius: 10,
                       background: "var(--input-bg)",
                       color: "var(--text-primary)",
-                      border: "1px solid var(--input-border)",
+                      border: "1px solid var(--border)",
                     }}
                   >
-                    <option value="1">1st Year &mdash; Sem 1</option>
-                    <option value="3">Lateral Entry &mdash; Sem 3</option>
+                    <option value="1">1st Year — Sem 1</option>
+                    <option value="3">Lateral Entry — Sem 3</option>
                   </select>
                 </div>
               ) : (
@@ -157,43 +198,28 @@ export default function AddUserModal({
                     name="designation"
                     value={formData.designation}
                     onChange={handleChange}
-                    placeholder="Assistant Professor"
                   />
                   <Input
                     label="Department"
                     name="department"
                     value={formData.department}
                     onChange={handleChange}
-                    placeholder="CSE"
                   />
                 </>
               )}
 
               {cachedPassword ? (
                 <div
-                  className="p-3 rounded-lg text-sm font-body mt-2 flex items-center justify-between"
                   style={{
                     background: "var(--accent-amber-bg)",
                     border: "1px solid var(--accent-amber-border)",
                     color: "var(--accent-amber)",
+                    borderRadius: 10,
+                    padding: "10px",
+                    fontSize: "0.8rem",
                   }}
                 >
-                  <span className="flex items-center gap-2">
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                      <path d="M7 11V7a5 5 0 0110 0v4" />
-                    </svg>
-                    Using cached session password
-                  </span>
+                  Using cached session password
                 </div>
               ) : (
                 <Input
@@ -207,10 +233,17 @@ export default function AddUserModal({
                 />
               )}
 
+              {/* Buttons */}
               <div className="flex gap-3 mt-4">
-                <Button variant="secondary" fullWidth onClick={onClose} type="button">
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  onClick={onClose}
+                  type="button"
+                >
                   Cancel
                 </Button>
+
                 <Button
                   variant="primary"
                   fullWidth
@@ -218,7 +251,9 @@ export default function AddUserModal({
                   loading={loading}
                   type="submit"
                 >
-                  Create {isStudent ? "Student" : "Faculty"}
+                  {loading
+                    ? "Creating..."
+                    : `Create ${isStudent ? "Student" : "Faculty"}`}
                 </Button>
               </div>
             </form>

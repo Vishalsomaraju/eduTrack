@@ -13,7 +13,7 @@ export default function FacultyPage() {
   const [faculty, setFaculty] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Filters
   const [search, setSearch] = useState("");
 
@@ -30,7 +30,7 @@ export default function FacultyPage() {
     try {
       const [facData, { data: subData }] = await Promise.all([
         api.get("/admin/users?role=faculty"),
-        supabase.from("subjects").select("*").not("faculty_id", "is", null)
+        supabase.from("subjects").select("*").not("faculty_id", "is", null),
       ]);
       setFaculty(facData || []);
       setSubjects(subData || []);
@@ -50,12 +50,13 @@ export default function FacultyPage() {
       const fp = Array.isArray(f.faculty_profiles)
         ? f.faculty_profiles[0]
         : f.faculty_profiles;
-        
+
       const assignedSubjects = subjects.filter((s) => s.faculty_id === f.id);
-      
+
       return {
         ...f,
-        employee_id: fp?.employee_id || `EMP-${f.id.substring(0, 5).toUpperCase()}`,
+        employee_id:
+          fp?.employee_id || `EMP-${f.id.substring(0, 5).toUpperCase()}`,
         designation: fp?.designation || "Assistant Professor",
         experience: fp?.experience_years ? `${fp.experience_years} years` : "—",
         subjectsAssigned: assignedSubjects,
@@ -71,7 +72,7 @@ export default function FacultyPage() {
         f.name?.toLowerCase().includes(q) ||
         f.email?.toLowerCase().includes(q) ||
         f.employee_id?.toLowerCase().includes(q) ||
-        f.designation?.toLowerCase().includes(q)
+        f.designation?.toLowerCase().includes(q),
     );
   }, [processedFaculty, search]);
 
@@ -80,7 +81,7 @@ export default function FacultyPage() {
       const newUser = await api.post("/admin/users", payload);
       setIsAddOpen(false);
       try {
-        setFaculty(prev => [newUser, ...prev]);
+        setFaculty((prev) => [newUser, ...prev]);
         await fetchData();
       } catch (err) {
         alert("Faculty created but list may be stale — refresh to see latest");
@@ -93,12 +94,14 @@ export default function FacultyPage() {
   const handleDeleteConfirm = async (adminPassword) => {
     setDeleteError(null);
     try {
-      await api.delete(`/admin/users/${deleteTarget.id}`, { admin_password: adminPassword });
-      setFaculty(prev => prev.filter(u => u.id !== deleteTarget.id));
+      await api.delete(`/admin/users/${deleteTarget.id}`, {
+        admin_password: adminPassword,
+      });
+      setFaculty((prev) => prev.filter((u) => u.id !== deleteTarget.id));
       setDeleteTarget(null);
       fetchData().catch(() => {});
     } catch (err) {
-      const msg = err?.data?.detail || err?.message || 'Delete failed';
+      const msg = err?.data?.detail || err?.message || "Delete failed";
       if (msg.toLowerCase().includes("invalid admin password")) {
         setDeleteError("Incorrect password. Please try again.");
       } else {
@@ -119,28 +122,39 @@ export default function FacultyPage() {
       label: "Subjects Assigned",
       render: (subs) => {
         if (!subs || subs.length === 0) {
-          return <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>None</span>;
+          return (
+            <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>
+              None
+            </span>
+          );
         }
-        
+
         const displaySubs = subs.slice(0, 3);
         const extra = subs.length - 3;
-        
+
         return (
           <div className="flex flex-wrap items-center gap-1.5">
             <Badge variant="blue" className="mr-1">
               {subs.length}
             </Badge>
             {displaySubs.map((s) => (
-              <span 
-                key={s.id} 
-                className="px-2 py-0.5 text-xs rounded font-display tracking-wider font-semibold"
-                style={{ background: "var(--bg-elevated)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
+              <span
+                key={s.id}
+                className="px-2 py-0.5 text-xs rounded font-body"
+                style={{
+                  background: "var(--bg-elevated)",
+                  color: "var(--text-primary)",
+                  border: "1px solid var(--border)",
+                }}
               >
-                {s.code}
+                {s.name}
               </span>
             ))}
             {extra > 0 && (
-              <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
+              <span
+                className="text-xs font-semibold"
+                style={{ color: "var(--text-muted)" }}
+              >
                 +{extra} more
               </span>
             )}
@@ -166,14 +180,20 @@ export default function FacultyPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-6 h-full pb-8">
+    <div className="flex flex-col gap-6 h-full p-4 sm:p-6 md:p-8 max-w-[1600px] mx-auto w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-display font-bold" style={{ color: "var(--text-primary)" }}>
+          <h1
+            className="text-2xl font-display font-bold"
+            style={{ color: "var(--text-primary)" }}
+          >
             Faculty
           </h1>
-          <p className="text-sm font-body mt-1" style={{ color: "var(--text-muted)" }}>
+          <p
+            className="text-sm font-body mt-1"
+            style={{ color: "var(--text-muted)" }}
+          >
             Manage teaching staff and access
           </p>
         </div>
@@ -208,7 +228,16 @@ export default function FacultyPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             icon={
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <circle cx="11" cy="11" r="8" />
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
@@ -220,7 +249,10 @@ export default function FacultyPage() {
       {/* Table */}
       <div
         className="rounded-xl overflow-hidden shadow-sm flex-1 mb-6"
-        style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
+        style={{
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border)",
+        }}
       >
         <Table
           data={filteredFaculty}
@@ -241,7 +273,10 @@ export default function FacultyPage() {
 
       <DeleteConfirmModal
         isOpen={!!deleteTarget}
-        onClose={() => { setDeleteTarget(null); setDeleteError(null); }}
+        onClose={() => {
+          setDeleteTarget(null);
+          setDeleteError(null);
+        }}
         targetName={deleteTarget?.name}
         targetType="faculty"
         onConfirm={handleDeleteConfirm}

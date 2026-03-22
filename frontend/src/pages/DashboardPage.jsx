@@ -1,8 +1,3 @@
-// DashboardPage.jsx — Role-aware dashboard with flattened data-fetching waterfalls.
-// Student:  2 parallel waves instead of 3 (saves N round-trips via /attendance/my-summary)
-// Faculty:  1 parallel wave after subject load (unchanged structure, already parallel)
-// Admin:    unchanged
-
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
@@ -15,6 +10,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useAttendance } from "@/hooks/useAttendance";
 import { useMarks } from "@/hooks/useMarks";
 import { Card, SkeletonCard } from "@/components/ui";
+import api from "@/lib/api";
 import StatCard from "@/components/dashboard/StatCard";
 import AttendanceRing from "@/components/dashboard/AttendanceRing";
 import AtRiskBanner from "@/components/dashboard/AtRiskBanner";
@@ -27,9 +23,6 @@ import AttendanceSummary from "@/components/attendance/AttendanceSummary";
 import AtRiskTable from "@/components/dashboard/AtRiskTable";
 import SystemStats from "@/components/dashboard/SystemStats";
 import AttendanceTrendChart from "@/components/dashboard/AttendanceTrendChart";
-import api from "@/lib/api";
-
-// ── Helpers ────────────────────────────────────────────────────────────────
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -47,10 +40,8 @@ function getFormattedDate() {
   });
 }
 
-// ── Ring skeleton ──────────────────────────────────────────────────────────
-
 function RingSkeleton({ size = 120 }) {
-  const shimmer = {
+  const s = {
     background:
       "linear-gradient(90deg, var(--bg-elevated) 0%, rgba(255,255,255,0.04) 50%, var(--bg-elevated) 100%)",
     backgroundSize: "200% 100%",
@@ -65,12 +56,10 @@ function RingSkeleton({ size = 120 }) {
         flexShrink: 0,
       }}
     >
-      <div
-        style={{ ...shimmer, width: size, height: size, borderRadius: "50%" }}
-      />
+      <div style={{ ...s, width: size, height: size, borderRadius: "50%" }} />
       <div
         style={{
-          ...shimmer,
+          ...s,
           width: size * 0.7,
           height: 12,
           borderRadius: 4,
@@ -79,7 +68,7 @@ function RingSkeleton({ size = 120 }) {
       />
       <div
         style={{
-          ...shimmer,
+          ...s,
           width: size * 0.4,
           height: 10,
           borderRadius: 4,
@@ -91,7 +80,7 @@ function RingSkeleton({ size = 120 }) {
 }
 
 function SubjectCardSkeleton() {
-  const shimmer = {
+  const s = {
     background:
       "linear-gradient(90deg, var(--bg-elevated) 0%, rgba(255,255,255,0.04) 50%, var(--bg-elevated) 100%)",
     backgroundSize: "200% 100%",
@@ -113,34 +102,28 @@ function SubjectCardSkeleton() {
         <div style={{ flex: 1 }}>
           <div
             style={{
-              ...shimmer,
+              ...s,
               height: 22,
               width: 60,
               borderRadius: 999,
               marginBottom: 10,
             }}
           />
-          <div
-            style={{ ...shimmer, height: 18, width: "80%", marginBottom: 6 }}
-          />
-          <div style={{ ...shimmer, height: 14, width: "50%" }} />
+          <div style={{ ...s, height: 18, width: "80%", marginBottom: 6 }} />
+          <div style={{ ...s, height: 14, width: "50%" }} />
         </div>
-        <div
-          style={{ ...shimmer, width: 80, height: 80, borderRadius: "50%" }}
-        />
+        <div style={{ ...s, width: 80, height: 80, borderRadius: "50%" }} />
       </div>
-      <div style={{ ...shimmer, height: 1, margin: "12px 0" }} />
+      <div style={{ ...s, height: 1, margin: "12px 0" }} />
       <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <div style={{ ...shimmer, height: 14, width: 90 }} />
-        <div style={{ ...shimmer, height: 14, width: 70 }} />
+        <div style={{ ...s, height: 14, width: 90 }} />
+        <div style={{ ...s, height: 14, width: 70 }} />
       </div>
     </div>
   );
 }
 
 // ── Student Dashboard ──────────────────────────────────────────────────────
-// WATERFALL BEFORE: subjects → recent-activity(N) → summaries(N)  = 3 rounds
-// WATERFALL AFTER:  [subjects + marks] parallel → [recent + summaries-batch] parallel = 2 rounds
 
 function StudentDashboard() {
   const { user, profile } = useAuthStore();
@@ -148,69 +131,56 @@ function StudentDashboard() {
   const { fetchAllMyMarks } = useMarks();
 
   const [subjects, setSubjects] = useState([]);
-  const [summaries, setSummaries] = useState({}); // { [subject_id]: summary }
+  const [summaries, setSummaries] = useState({});
   const [allMarks, setAllMarks] = useState([]);
   const [recentActivity, setRecent] = useState([]);
   const [loading, setLoading] = useState(true);
   const loadedRef = useRef(null);
 
   useEffect(() => {
-    if (!user?.id) return;
-    if (loadedRef.current === user.id) return;
+    if (!user?.id || loadedRef.current === user.id) return;
     loadedRef.current = user.id;
 
     async function load() {
-      // ── Wave 1: subjects + marks (fully parallel) ──────────────────────
       const [subjectsResult, marksResult] = await Promise.all([
         fetchSubjects(),
         fetchAllMyMarks(),
       ]);
-
       const subs = subjectsResult.data ?? [];
       const marks = marksResult.data ?? [];
       setSubjects(subs);
       setAllMarks(marks);
-
-      if (subs.length === 0) {
+      if (!subs.length) {
         setLoading(false);
         return;
       }
 
-      // ── Wave 2: recent activity + ALL summaries in ONE batch call ──────
-      // Old: N calls to /attendance/{id}/summary  → very slow
-      // New: 1 call to /attendance/my-summary     → returns all at once
+      // /attendance/my-summary = 1 call replacing N summary calls
       const [recentResults, summaryBatch] = await Promise.all([
-        // Recent activity: fetch per-subject but share one token round-trip via Promise.all
         Promise.all(
           subs.map((s) => fetchRecentActivity(s.id, "student", user.id)),
         ),
-        // NEW: single batch endpoint
         api.get("/attendance/my-summary").catch(() => null),
       ]);
 
-      // Merge recent activity
-      const merged = recentResults
-        .flatMap((r) => r.data ?? [])
-        .sort((a, b) => String(b.date).localeCompare(String(a.date)))
-        .slice(0, 10);
-      setRecent(merged);
-
-      // Batch summaries
-      if (summaryBatch && typeof summaryBatch === "object") {
+      setRecent(
+        recentResults
+          .flatMap((r) => r.data ?? [])
+          .sort((a, b) => String(b.date).localeCompare(String(a.date)))
+          .slice(0, 10),
+      );
+      if (summaryBatch && typeof summaryBatch === "object")
         setSummaries(summaryBatch);
-      }
-
       setLoading(false);
     }
-
     load();
   }, [user?.id]);
 
-  // ── Derived stats ────────────────────────────────────────────────────────
   const overallAttendance = useMemo(() => {
     const pcts = subjects.map((s) => summaries[s.id]?.percentage ?? 0);
-    if (!pcts.length) return 0;
-    return Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length);
+    return pcts.length
+      ? Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length)
+      : 0;
   }, [subjects, summaries]);
 
   const avgScore = useMemo(() => {
@@ -236,7 +206,6 @@ function StudentDashboard() {
         })),
     [subjects, summaries],
   );
-
   const marksWarnings = useMemo(
     () =>
       allMarks
@@ -249,7 +218,6 @@ function StudentDashboard() {
         })),
     [allMarks, subjectMap],
   );
-
   const totalWarnings = attendanceWarnings.length + marksWarnings.length;
   const firstName = profile?.name?.split(" ")[0] ?? "there";
 
@@ -336,7 +304,6 @@ function StudentDashboard() {
         </div>
       )}
 
-      {/* Attendance rings */}
       <div style={{ marginBottom: 24 }}>
         <h2
           style={{
@@ -421,26 +388,24 @@ function FacultyDashboard() {
 
   const overallAvgAttendance = useMemo(() => {
     const vals = subjects.map((s) => perSubjectStats[s.id]?.avg ?? 0);
-    if (!vals.length) return 0;
-    return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+    return vals.length
+      ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)
+      : 0;
   }, [subjects, perSubjectStats]);
 
   useEffect(() => {
-    if (!user?.id) return;
-    if (loadedRef.current === user.id) return;
+    if (!user?.id || loadedRef.current === user.id) return;
     loadedRef.current = user.id;
 
     async function load() {
       const { data: subs } = await fetchSubjects();
       const subjectList = subs ?? [];
       setSubjects(subjectList);
-
       if (!subjectList.length) {
         setLoading(false);
         return;
       }
 
-      // Parallel: summaries + student lists for all subjects at once
       const [summaryResults, studentResults] = await Promise.all([
         Promise.all(subjectList.map((s) => fetchAttendanceSummary(s.id))),
         Promise.all(subjectList.map((s) => fetchStudentsForSubject(s.id))),
@@ -449,7 +414,6 @@ function FacultyDashboard() {
       const stats = {};
       const allStudentIds = new Set();
       const atRiskIds = new Set();
-
       subjectList.forEach((s, i) => {
         const summary = summaryResults[i].data ?? [];
         const students = studentResults[i].data ?? [];
@@ -460,10 +424,13 @@ function FacultyDashboard() {
                   summary.length,
               )
             : 0;
-        const atRisk = summary.filter((st) => st.atRisk).length;
         students.forEach((st) => allStudentIds.add(st.id));
         summary.filter((st) => st.atRisk).forEach((st) => atRiskIds.add(st.id));
-        stats[s.id] = { avg, count: students.length, atRisk };
+        stats[s.id] = {
+          avg,
+          count: students.length,
+          atRisk: summary.filter((st) => st.atRisk).length,
+        };
       });
 
       setPerSubjectStats(stats);
@@ -472,7 +439,6 @@ function FacultyDashboard() {
       setSelectedSubject(subjectList[0]);
       setLoading(false);
     }
-
     load();
   }, [user?.id]);
 
@@ -637,107 +603,75 @@ function FacultyDashboard() {
 }
 
 // ── Admin Dashboard ─────────────────────────────────────────────────────────
+// BEFORE: N×/attendance/{id}/summary (400 Bad Request) + N×/marks/{id} = 2N broken calls
+// AFTER:  /analytics/subject-comparison (1 call) returns avg_attendance + avg_marks per subject
 
 function AdminDashboard() {
   const { user, profile } = useAuthStore();
-  const {
-    fetchSubjects,
-    fetchAttendanceSummary,
-    fetchAttendanceTrend,
-    fetchAllProfiles,
-  } = useAttendance();
-  const { fetchMarks } = useMarks();
+  const { fetchSubjects, fetchAllProfiles } = useAttendance();
 
   const [subjects, setSubjects] = useState([]);
   const [students, setStudents] = useState([]);
   const [faculty, setFaculty] = useState([]);
-  const [allSummaries, setAllSummaries] = useState({});
-  const [allMarksFlat, setAllMarksFlat] = useState([]);
+  const [comparisonData, setComparison] = useState([]);
   const [trendData, setTrendData] = useState([]);
   const [loading, setLoading] = useState(true);
   const loadedRef = useRef(null);
 
-  const totalStudents = students.length;
-  const totalFaculty = faculty.length;
-  const totalSubjects = subjects.length;
-
   const overallAttendance = useMemo(() => {
-    const avgs = subjects.map((s) => allSummaries[s.id]?.avg ?? 0);
-    if (!avgs.length) return 0;
+    if (!comparisonData.length) return 0;
+    const avgs = comparisonData.map((s) => s.avg_attendance ?? 0);
     return Math.round(avgs.reduce((a, b) => a + b, 0) / avgs.length);
-  }, [subjects, allSummaries]);
+  }, [comparisonData]);
 
   const marksAvg = useMemo(() => {
-    const pcts = allMarksFlat
-      .filter((m) => m.max_score > 0)
-      .map((m) => Math.round((m.score / m.max_score) * 100));
-    if (!pcts.length) return 0;
-    return Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length);
-  }, [allMarksFlat]);
+    const avgs = comparisonData
+      .filter((s) => s.avg_marks > 0)
+      .map((s) => s.avg_marks);
+    return avgs.length
+      ? Math.round(avgs.reduce((a, b) => a + b, 0) / avgs.length)
+      : 0;
+  }, [comparisonData]);
 
-  const atRiskCount = useMemo(() => {
-    const ids = new Set();
-    Object.values(allSummaries).forEach(({ students: sums = [] }) => {
-      sums.filter((s) => s.atRisk).forEach((s) => ids.add(s.id));
-    });
-    allMarksFlat
-      .filter((m) => m.max_score > 0 && m.score / m.max_score < 0.4)
-      .forEach((m) => ids.add(m.student_id));
-    return ids.size;
-  }, [allSummaries, allMarksFlat]);
+  const atRiskCount = useMemo(
+    () => comparisonData.filter((s) => s.avg_attendance < 75).length,
+    [comparisonData],
+  );
 
   useEffect(() => {
-    if (!user?.id) return;
-    if (loadedRef.current === user.id) return;
+    if (!user?.id || loadedRef.current === user.id) return;
     loadedRef.current = user.id;
 
     async function load() {
+      // Wave 1: subjects + profiles
       const [subjectsResult, profilesResult] = await Promise.all([
         fetchSubjects(),
         fetchAllProfiles(),
       ]);
-
       const subs = subjectsResult.data ?? [];
       const allProfiles = profilesResult.data ?? [];
       setSubjects(subs);
       setStudents(allProfiles.filter((p) => p.role === "student"));
       setFaculty(allProfiles.filter((p) => p.role === "faculty"));
 
-      if (!subs.length) {
-        setLoading(false);
-        return;
-      }
-
-      const [summaryResults, marksResults, trendResult] = await Promise.all([
-        Promise.all(subs.map((s) => fetchAttendanceSummary(s.id))),
-        Promise.all(subs.map((s) => fetchMarks(s.id))),
-        fetchAttendanceTrend(),
+      // Wave 2: subject-comparison replaces N attendance + N marks calls
+      const firstSubjectId = subs[0]?.id;
+      const [compRes, trendRes] = await Promise.all([
+        api.get("/analytics/subject-comparison").catch(() => []),
+        firstSubjectId
+          ? api
+              .get("/analytics/attendance-trend", {
+                subject_id: firstSubjectId,
+                days: 30,
+              })
+              .catch(() => [])
+          : Promise.resolve([]),
       ]);
 
-      const summaries = {};
-      subs.forEach((s, i) => {
-        const data = summaryResults[i].data ?? [];
-        const avg =
-          data.length > 0
-            ? Math.round(
-                data.reduce((sum, st) => sum + st.percentage, 0) / data.length,
-              )
-            : 0;
-        summaries[s.id] = { name: s.name, students: data, avg };
-      });
-      setAllSummaries(summaries);
-
-      const marks = [];
-      subs.forEach((s, i) => {
-        (marksResults[i].data ?? []).forEach((m) =>
-          marks.push({ ...m, subjectName: s.name }),
-        );
-      });
-      setAllMarksFlat(marks);
-      setTrendData(trendResult.data ?? []);
+      setComparison(Array.isArray(compRes) ? compRes : []);
+      setTrendData(Array.isArray(trendRes) ? trendRes : []);
       setLoading(false);
     }
-
     load();
   }, [user?.id]);
 
@@ -771,9 +705,9 @@ function AdminDashboard() {
       </div>
 
       <SystemStats
-        totalStudents={totalStudents}
-        totalFaculty={totalFaculty}
-        totalSubjects={totalSubjects}
+        totalStudents={students.length}
+        totalFaculty={faculty.length}
+        totalSubjects={subjects.length}
         overallAttendance={overallAttendance}
         atRiskCount={atRiskCount}
         marksAvg={marksAvg}
@@ -805,7 +739,7 @@ function AdminDashboard() {
                 />
               ))}
             </div>
-          ) : subjects.length === 0 ? (
+          ) : comparisonData.length === 0 ? (
             <p
               style={{
                 fontFamily: "var(--font-body)",
@@ -816,12 +750,12 @@ function AdminDashboard() {
                 padding: "24px 0",
               }}
             >
-              No subjects found
+              No data yet
             </p>
           ) : (
             <div style={{ maxHeight: 280, overflowY: "auto" }}>
-              {subjects.map((s, i) => {
-                const avg = allSummaries[s.id]?.avg ?? 0;
+              {comparisonData.map((s, i) => {
+                const avg = s.avg_attendance ?? 0;
                 const avgColor =
                   avg >= 75
                     ? "var(--accent-green)"
@@ -830,21 +764,25 @@ function AdminDashboard() {
                       : "var(--accent-red)";
                 return (
                   <div
-                    key={s.id}
+                    key={s.subject_id}
                     style={{
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
                       padding: "10px 0",
                       borderBottom:
-                        i === subjects.length - 1
+                        i === comparisonData.length - 1
                           ? "none"
                           : "1px solid var(--border)",
-                      borderRadius: 4,
                     }}
                   >
                     <div
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        minWidth: 0,
+                      }}
                     >
                       <span
                         style={{
@@ -852,9 +790,12 @@ function AdminDashboard() {
                           fontWeight: 600,
                           fontSize: "0.85rem",
                           color: "var(--text-primary)",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
                         }}
                       >
-                        {s.name}
+                        {s.subject_name}
                       </span>
                       <span
                         style={{
@@ -866,9 +807,10 @@ function AdminDashboard() {
                           border: "1px solid var(--accent-blue-border)",
                           borderRadius: 999,
                           padding: "1px 7px",
+                          flexShrink: 0,
                         }}
                       >
-                        {s.code}
+                        {s.subject_code}
                       </span>
                     </div>
                     <span
@@ -877,6 +819,8 @@ function AdminDashboard() {
                         fontWeight: 600,
                         fontSize: "0.85rem",
                         color: avgColor,
+                        flexShrink: 0,
+                        marginLeft: 8,
                       }}
                     >
                       {avg}%
@@ -889,12 +833,7 @@ function AdminDashboard() {
         </Card>
       </div>
 
-      <AtRiskTable
-        attendanceSummaries={allSummaries}
-        allMarks={allMarksFlat}
-        students={students}
-        loading={loading}
-      />
+      <AtRiskTable data={[]} loading={loading} />
     </div>
   );
 }

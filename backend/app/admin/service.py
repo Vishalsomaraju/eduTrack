@@ -35,10 +35,10 @@ def create_user(data: schemas.UserCreate) -> dict:
     if data.role == "student":
         student_profile_data = {
             "id": new_user_id,
-            "roll_number": f"KPRIT{new_user_id[:6].upper()}",
-            "current_semester": data.entry_semester or 1,
-            "batch_year": datetime.now().year
-        }
+            "roll_number": None,
+            "semester": data.entry_semester or 1,
+            "year": 1 if (data.entry_semester or 1) <= 2 else 2 if (data.entry_semester or 1) <= 4 else 3 if (data.entry_semester or 1) <= 6 else 4,
+        }   
         try:
             admin_client.table("student_profiles").upsert(student_profile_data).execute()
         except Exception as e:

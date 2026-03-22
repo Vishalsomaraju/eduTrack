@@ -141,7 +141,7 @@ function buildColumns(showStudent) {
       ),
     },
     {
-      key: "percentage",
+      key: "attendance_status",
       label: "Status",
       render: (val) => <StatusBadge percentage={val} />,
     },
