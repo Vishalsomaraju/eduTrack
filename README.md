@@ -274,7 +274,6 @@ backend/app/
 - [x] Attendance calendar heatmap (student)
 
 ### 🔄 In Progress / Planned
-- [ ] 3D landing page (Three.js + GSAP book scene)
 - [ ] AI-based performance prediction
 - [ ] Push notifications for at-risk alerts
 - [ ] Mobile app (React Native)
