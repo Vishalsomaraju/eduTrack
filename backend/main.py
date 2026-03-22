@@ -11,6 +11,7 @@ from app.marks.router import router as marks_router
 from app.analytics.router import router as analytics_router
 from app.courses.router import router as courses_router
 from app.lab_marks.router import router as lab_marks_router
+from app.admin.router import router as admin_router
 
 app = FastAPI(
     title="EduTrack API",
@@ -41,6 +42,7 @@ app.include_router(marks_router)
 app.include_router(analytics_router)
 app.include_router(courses_router)
 app.include_router(lab_marks_router)
+app.include_router(admin_router)
 
 @app.get("/health", tags=["meta"])
 async def health():

@@ -1,7 +1,7 @@
-// DashboardPage.jsx — Role-aware dashboard.
-// Student view: full personal dashboard with stats, rings, marks card, and activity.
-// Faculty view: subject overview, quick attendance, grade distribution.
-// Admin: "coming soon" stub (built next sprint).
+// DashboardPage.jsx — Role-aware dashboard with flattened data-fetching waterfalls.
+// Student:  2 parallel waves instead of 3 (saves N round-trips via /attendance/my-summary)
+// Faculty:  1 parallel wave after subject load (unchanged structure, already parallel)
+// Admin:    unchanged
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -27,6 +27,7 @@ import AttendanceSummary from "@/components/attendance/AttendanceSummary";
 import AtRiskTable from "@/components/dashboard/AtRiskTable";
 import SystemStats from "@/components/dashboard/SystemStats";
 import AttendanceTrendChart from "@/components/dashboard/AttendanceTrendChart";
+import api from "@/lib/api";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -44,29 +45,6 @@ function getFormattedDate() {
     month: "long",
     year: "numeric",
   });
-}
-
-// ── Stubs ──────────────────────────────────────────────────────────────────
-
-function ComingSoonStub({ title }) {
-  return (
-    <div style={{ padding: "24px" }}>
-      <Card title={title}>
-        <div
-          style={{
-            padding: "48px 0",
-            textAlign: "center",
-            fontFamily: "var(--font-body)",
-            fontSize: "0.9rem",
-            color: "var(--text-muted)",
-            fontStyle: "italic",
-          }}
-        >
-          {title} — coming soon
-        </div>
-      </Card>
-    </div>
-  );
 }
 
 // ── Ring skeleton ──────────────────────────────────────────────────────────
@@ -88,12 +66,7 @@ function RingSkeleton({ size = 120 }) {
       }}
     >
       <div
-        style={{
-          ...shimmer,
-          width: size,
-          height: size,
-          borderRadius: "50%",
-        }}
+        style={{ ...shimmer, width: size, height: size, borderRadius: "50%" }}
       />
       <div
         style={{
@@ -116,277 +89,6 @@ function RingSkeleton({ size = 120 }) {
     </div>
   );
 }
-
-// ── Student dashboard ──────────────────────────────────────────────────────
-
-function StudentDashboard() {
-  const { user, profile, role } = useAuthStore();
-  const { fetchSubjects, fetchAttendanceSummary, fetchRecentActivity } =
-    useAttendance();
-  const { fetchAllMyMarks } = useMarks();
-
-  const [subjects, setSubjects] = useState([]);
-  const [summaries, setSummaries] = useState({});
-  const [allMarks, setAllMarks] = useState([]);
-  const [recentActivity, setRecentActivity] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const studentLoadedRef = useRef(null);
-
-  useEffect(() => {
-    if (!user?.id) return;
-    if (studentLoadedRef.current === user.id) return;
-    studentLoadedRef.current = user.id;
-
-    async function loadData() {
-      // Parallel first-wave fetches
-      const [subjectsResult, marksResult] = await Promise.all([
-        fetchSubjects(),
-        fetchAllMyMarks(),
-      ]);
-
-      const subs = subjectsResult.data ?? [];
-      setSubjects(subs);
-      setAllMarks(marksResult.data ?? []);
-
-      const recentResults = await Promise.all(
-        subs.map((s) => fetchRecentActivity(s.id, role, user.id)),
-      );
-      const mergedRecent = recentResults
-        .flatMap((r) => r.data ?? [])
-        .sort((a, b) => String(b.date).localeCompare(String(a.date)))
-        .slice(0, 10);
-      setRecentActivity(mergedRecent);
-
-      // Second wave — per-subject attendance summaries
-      if (subs.length > 0) {
-        const summaryResults = await Promise.all(
-          subs.map((s) => fetchAttendanceSummary(s.id, user.id)),
-        );
-        const map = {};
-        subs.forEach((s, i) => {
-          const summaryData = summaryResults[i].data;
-          console.log("Summary response:", summaryData);
-          const entry = Array.isArray(summaryData)
-            ? summaryData[0]
-            : summaryData;
-          if (entry) map[s.id] = entry;
-        });
-        setSummaries(map);
-      }
-
-      setLoading(false);
-    }
-
-    loadData();
-  }, [user?.id]);
-
-  // ── Derived stats ────────────────────────────────────────────────────
-  const overallAttendance = useMemo(() => {
-    const pcts = subjects.map((s) => summaries[s.id]?.percentage ?? 0);
-    if (pcts.length === 0) return 0;
-    return Math.round(pcts.reduce((sum, p) => sum + p, 0) / pcts.length);
-  }, [subjects, summaries]);
-
-  const totalSubjects = subjects.length;
-
-  const subjectMap = useMemo(
-    () => Object.fromEntries(subjects.map((s) => [s.id, s])),
-    [subjects],
-  );
-
-  const avgScore = useMemo(() => {
-    if (allMarks.length === 0) return 0;
-    const pcts = allMarks.map((m) =>
-      m.max_score > 0 ? Math.round((m.score / m.max_score) * 100) : 0,
-    );
-    return Math.round(pcts.reduce((sum, p) => sum + p, 0) / pcts.length);
-  }, [allMarks]);
-
-  const attendanceWarnings = useMemo(
-    () =>
-      subjects
-        .filter((s) => (summaries[s.id]?.percentage ?? 0) < 75)
-        .map((s) => ({
-          subjectName: s.name,
-          percentage: summaries[s.id]?.percentage ?? 0,
-        })),
-    [subjects, summaries],
-  );
-
-  const marksWarnings = useMemo(
-    () =>
-      allMarks
-        .filter((m) => m.max_score > 0 && m.score / m.max_score < 0.4)
-        .map((m) => ({
-          subjectName: subjectMap[m.subject_id]?.name || m.subject_id,
-          type: m.type,
-          score: m.score,
-          maxScore: m.max_score,
-        })),
-    [allMarks, subjectMap],
-  );
-
-  const totalWarnings = attendanceWarnings.length + marksWarnings.length;
-  const firstName = profile?.name?.split(" ")[0] ?? "there";
-
-  return (
-    <div>
-      {/* ── Greeting header ───────────────────────────────────────── */}
-      <div style={{ marginBottom: 24 }}>
-        <h1
-          style={{
-            fontFamily: "var(--font-display)",
-            fontWeight: 700,
-            fontSize: "1.5rem",
-            color: "var(--text-primary)",
-            margin: 0,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          {getGreeting()}, {firstName} 👋
-        </h1>
-        <p
-          style={{
-            fontFamily: "var(--font-body)",
-            fontWeight: 400,
-            fontSize: "0.9rem",
-            color: "var(--text-muted)",
-            margin: "4px 0 0",
-          }}
-        >
-          {getFormattedDate()}
-        </p>
-      </div>
-
-      {/* ── At-risk banner ────────────────────────────────────────── */}
-      {!loading && (
-        <AtRiskBanner
-          attendanceWarnings={attendanceWarnings}
-          marksWarnings={marksWarnings}
-        />
-      )}
-
-      {/* ── Stats row ─────────────────────────────────────────────── */}
-      {loading ? (
-        <div
-          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
-          style={{ marginBottom: 24 }}
-        >
-          {[0, 1, 2, 3].map((item) => (
-            <SkeletonCard key={item} />
-          ))}
-        </div>
-      ) : (
-        <div
-          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
-          style={{ marginBottom: 24 }}
-        >
-          <StatCard
-            label="Attendance"
-            value={`${overallAttendance}%`}
-            sub={`across ${totalSubjects} subjects`}
-            icon={CalendarCheck}
-            color={overallAttendance >= 75 ? "green" : "red"}
-            trend={{
-              direction: overallAttendance >= 75 ? "up" : "down",
-              value: overallAttendance >= 75 ? "On track" : "Below threshold",
-            }}
-          />
-          <StatCard
-            label="Subjects"
-            value={totalSubjects}
-            sub="enrolled this semester"
-            icon={BookOpen}
-            color="blue"
-          />
-          <StatCard
-            label="Avg Score"
-            value={`${avgScore}%`}
-            sub="across all assessments"
-            icon={ClipboardList}
-            color={avgScore >= 60 ? "green" : avgScore >= 40 ? "amber" : "red"}
-          />
-          <StatCard
-            label="At Risk"
-            value={totalWarnings}
-            sub={totalWarnings > 0 ? "subjects need attention" : "All clear"}
-            icon={AlertTriangle}
-            color={totalWarnings > 0 ? "red" : "green"}
-          />
-        </div>
-      )}
-
-      {/* ── Attendance rings ──────────────────────────────────────── */}
-      <div style={{ marginBottom: 24 }}>
-        <h2
-          style={{
-            fontFamily: "var(--font-display)",
-            fontWeight: 700,
-            fontSize: "1rem",
-            color: "var(--text-primary)",
-            margin: "0 0 16px",
-          }}
-        >
-          Attendance by Subject
-        </h2>
-
-        {loading ? (
-          <div
-            style={{
-              display: "flex",
-              gap: 16,
-              overflowX: "auto",
-              paddingBottom: 8,
-            }}
-          >
-            {[0, 1, 2, 3].map((i) => (
-              <RingSkeleton key={i} />
-            ))}
-          </div>
-        ) : subjects.length === 0 ? (
-          <p
-            style={{
-              fontFamily: "var(--font-body)",
-              fontSize: "0.875rem",
-              color: "var(--text-muted)",
-              fontStyle: "italic",
-              textAlign: "center",
-              padding: "24px 0",
-            }}
-          >
-            No enrolled subjects
-          </p>
-        ) : (
-          <div
-            style={{
-              display: "flex",
-              gap: 16,
-              overflowX: "auto",
-              paddingBottom: 8,
-            }}
-          >
-            {subjects.map((s) => (
-              <AttendanceRing
-                key={s.id}
-                percentage={summaries[s.id]?.percentage ?? 0}
-                subjectName={s.name}
-                subjectCode={s.code}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* ── Bottom two-column grid ────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <StudentMarksCard compact={true} subjectMap={subjectMap} />
-        <RecentActivity records={recentActivity} loading={loading} />
-      </div>
-    </div>
-  );
-}
-
-// ── Subject card skeleton (used in faculty loading state) ──────────────────
 
 function SubjectCardSkeleton() {
   const shimmer = {
@@ -436,87 +138,123 @@ function SubjectCardSkeleton() {
   );
 }
 
-// ── Faculty dashboard ───────────────────────────────────────────────────────
+// ── Student Dashboard ──────────────────────────────────────────────────────
+// WATERFALL BEFORE: subjects → recent-activity(N) → summaries(N)  = 3 rounds
+// WATERFALL AFTER:  [subjects + marks] parallel → [recent + summaries-batch] parallel = 2 rounds
 
-function FacultyDashboard() {
+function StudentDashboard() {
   const { user, profile } = useAuthStore();
-  const { fetchSubjects, fetchAttendanceSummary, fetchStudentsForSubject } =
-    useAttendance();
+  const { fetchSubjects, fetchRecentActivity } = useAttendance();
+  const { fetchAllMyMarks } = useMarks();
 
   const [subjects, setSubjects] = useState([]);
-  const [perSubjectStats, setPerSubjectStats] = useState({});
-  const [totalStudents, setTotalStudents] = useState(0);
-  const [totalAtRisk, setTotalAtRisk] = useState(0);
-  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [summaries, setSummaries] = useState({}); // { [subject_id]: summary }
+  const [allMarks, setAllMarks] = useState([]);
+  const [recentActivity, setRecent] = useState([]);
   const [loading, setLoading] = useState(true);
-  const facultyLoadedRef = useRef(null);
-
-  const overallAvgAttendance = useMemo(() => {
-    const vals = subjects.map((s) => perSubjectStats[s.id]?.avg ?? 0);
-    if (vals.length === 0) return 0;
-    return Math.round(vals.reduce((sum, v) => sum + v, 0) / vals.length);
-  }, [subjects, perSubjectStats]);
+  const loadedRef = useRef(null);
 
   useEffect(() => {
     if (!user?.id) return;
-    if (facultyLoadedRef.current === user.id) return;
-    facultyLoadedRef.current = user.id;
+    if (loadedRef.current === user.id) return;
+    loadedRef.current = user.id;
 
     async function load() {
-      const subjectsResult = await fetchSubjects();
+      // ── Wave 1: subjects + marks (fully parallel) ──────────────────────
+      const [subjectsResult, marksResult] = await Promise.all([
+        fetchSubjects(),
+        fetchAllMyMarks(),
+      ]);
+
       const subs = subjectsResult.data ?? [];
+      const marks = marksResult.data ?? [];
       setSubjects(subs);
+      setAllMarks(marks);
 
       if (subs.length === 0) {
         setLoading(false);
         return;
       }
 
-      // Parallel: per-subject summaries + enrolled student lists
-      const [summaryResults, studentResults] = await Promise.all([
-        Promise.all(subs.map((s) => fetchAttendanceSummary(s.id))),
-        Promise.all(subs.map((s) => fetchStudentsForSubject(s.id))),
+      // ── Wave 2: recent activity + ALL summaries in ONE batch call ──────
+      // Old: N calls to /attendance/{id}/summary  → very slow
+      // New: 1 call to /attendance/my-summary     → returns all at once
+      const [recentResults, summaryBatch] = await Promise.all([
+        // Recent activity: fetch per-subject but share one token round-trip via Promise.all
+        Promise.all(
+          subs.map((s) => fetchRecentActivity(s.id, "student", user.id)),
+        ),
+        // NEW: single batch endpoint
+        api.get("/attendance/my-summary").catch(() => null),
       ]);
 
-      const stats = {};
-      const allStudentIds = new Set();
-      const atRiskIds = new Set();
+      // Merge recent activity
+      const merged = recentResults
+        .flatMap((r) => r.data ?? [])
+        .sort((a, b) => String(b.date).localeCompare(String(a.date)))
+        .slice(0, 10);
+      setRecent(merged);
 
-      subs.forEach((s, i) => {
-        const summary = summaryResults[i].data ?? [];
-        const students = studentResults[i].data ?? [];
+      // Batch summaries
+      if (summaryBatch && typeof summaryBatch === "object") {
+        setSummaries(summaryBatch);
+      }
 
-        const avg =
-          summary.length > 0
-            ? Math.round(
-                summary.reduce((sum, st) => sum + st.percentage, 0) /
-                  summary.length,
-              )
-            : 0;
-        const atRisk = summary.filter((st) => st.atRisk).length;
-
-        students.forEach((st) => allStudentIds.add(st.id));
-        summary.filter((st) => st.atRisk).forEach((st) => atRiskIds.add(st.id));
-
-        stats[s.id] = { avg, count: students.length, atRisk };
-      });
-
-      setPerSubjectStats(stats);
-      setTotalStudents(allStudentIds.size);
-      setTotalAtRisk(atRiskIds.size);
-      setSelectedSubject(subs[0]);
       setLoading(false);
     }
 
     load();
   }, [user?.id]);
 
+  // ── Derived stats ────────────────────────────────────────────────────────
+  const overallAttendance = useMemo(() => {
+    const pcts = subjects.map((s) => summaries[s.id]?.percentage ?? 0);
+    if (!pcts.length) return 0;
+    return Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length);
+  }, [subjects, summaries]);
+
+  const avgScore = useMemo(() => {
+    if (!allMarks.length) return 0;
+    const pcts = allMarks.map((m) =>
+      m.max_score > 0 ? Math.round((m.score / m.max_score) * 100) : 0,
+    );
+    return Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length);
+  }, [allMarks]);
+
+  const subjectMap = useMemo(
+    () => Object.fromEntries(subjects.map((s) => [s.id, s])),
+    [subjects],
+  );
+
+  const attendanceWarnings = useMemo(
+    () =>
+      subjects
+        .filter((s) => (summaries[s.id]?.percentage ?? 0) < 75)
+        .map((s) => ({
+          subjectName: s.name,
+          percentage: summaries[s.id]?.percentage ?? 0,
+        })),
+    [subjects, summaries],
+  );
+
+  const marksWarnings = useMemo(
+    () =>
+      allMarks
+        .filter((m) => m.max_score > 0 && m.score / m.max_score < 0.4)
+        .map((m) => ({
+          subjectName: subjectMap[m.subject_id]?.name || m.subject_id,
+          type: m.type,
+          score: m.score,
+          maxScore: m.max_score,
+        })),
+    [allMarks, subjectMap],
+  );
+
+  const totalWarnings = attendanceWarnings.length + marksWarnings.length;
   const firstName = profile?.name?.split(" ")[0] ?? "there";
-  const totalSubjects = subjects.length;
 
   return (
-    <div style={{ padding: "clamp(1rem, 2vw, 1.5rem)" }}>
-      {/* ── Greeting ──────────────────────────────────────────────── */}
+    <div>
       <div style={{ marginBottom: 24 }}>
         <h1
           style={{
@@ -533,7 +271,6 @@ function FacultyDashboard() {
         <p
           style={{
             fontFamily: "var(--font-body)",
-            fontWeight: 400,
             fontSize: "0.9rem",
             color: "var(--text-muted)",
             margin: "4px 0 0",
@@ -543,14 +280,238 @@ function FacultyDashboard() {
         </p>
       </div>
 
-      {/* ── Stats row ─────────────────────────────────────────────── */}
+      {!loading && (
+        <AtRiskBanner
+          attendanceWarnings={attendanceWarnings}
+          marksWarnings={marksWarnings}
+        />
+      )}
+
       {loading ? (
         <div
           className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
           style={{ marginBottom: 24 }}
         >
-          {[0, 1, 2, 3].map((item) => (
-            <SkeletonCard key={item} />
+          {[0, 1, 2, 3].map((i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+      ) : (
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
+          style={{ marginBottom: 24 }}
+        >
+          <StatCard
+            label="Attendance"
+            value={`${overallAttendance}%`}
+            sub={`across ${subjects.length} subjects`}
+            icon={CalendarCheck}
+            color={overallAttendance >= 75 ? "green" : "red"}
+            trend={{
+              direction: overallAttendance >= 75 ? "up" : "down",
+              value: overallAttendance >= 75 ? "On track" : "Below threshold",
+            }}
+          />
+          <StatCard
+            label="Subjects"
+            value={subjects.length}
+            sub="enrolled this semester"
+            icon={BookOpen}
+            color="blue"
+          />
+          <StatCard
+            label="Avg Score"
+            value={`${avgScore}%`}
+            sub="across all assessments"
+            icon={ClipboardList}
+            color={avgScore >= 60 ? "green" : avgScore >= 40 ? "amber" : "red"}
+          />
+          <StatCard
+            label="At Risk"
+            value={totalWarnings}
+            sub={totalWarnings > 0 ? "subjects need attention" : "All clear"}
+            icon={AlertTriangle}
+            color={totalWarnings > 0 ? "red" : "green"}
+          />
+        </div>
+      )}
+
+      {/* Attendance rings */}
+      <div style={{ marginBottom: 24 }}>
+        <h2
+          style={{
+            fontFamily: "var(--font-display)",
+            fontWeight: 700,
+            fontSize: "1rem",
+            color: "var(--text-primary)",
+            margin: "0 0 16px",
+          }}
+        >
+          Attendance by Subject
+        </h2>
+        {loading ? (
+          <div
+            style={{
+              display: "flex",
+              gap: 16,
+              overflowX: "auto",
+              paddingBottom: 8,
+            }}
+          >
+            {[0, 1, 2, 3].map((i) => (
+              <RingSkeleton key={i} />
+            ))}
+          </div>
+        ) : subjects.length === 0 ? (
+          <p
+            style={{
+              fontFamily: "var(--font-body)",
+              fontSize: "0.875rem",
+              color: "var(--text-muted)",
+              fontStyle: "italic",
+              textAlign: "center",
+              padding: "24px 0",
+            }}
+          >
+            No enrolled subjects
+          </p>
+        ) : (
+          <div
+            style={{
+              display: "flex",
+              gap: 16,
+              overflowX: "auto",
+              paddingBottom: 8,
+            }}
+          >
+            {subjects.map((s) => (
+              <AttendanceRing
+                key={s.id}
+                percentage={summaries[s.id]?.percentage ?? 0}
+                subjectName={s.name}
+                subjectCode={s.code}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <StudentMarksCard compact={true} subjectMap={subjectMap} />
+        <RecentActivity records={recentActivity} loading={loading} />
+      </div>
+    </div>
+  );
+}
+
+// ── Faculty Dashboard ──────────────────────────────────────────────────────
+
+function FacultyDashboard() {
+  const { user, profile } = useAuthStore();
+  const { fetchSubjects, fetchAttendanceSummary, fetchStudentsForSubject } =
+    useAttendance();
+
+  const [subjects, setSubjects] = useState([]);
+  const [perSubjectStats, setPerSubjectStats] = useState({});
+  const [totalStudents, setTotalStudents] = useState(0);
+  const [totalAtRisk, setTotalAtRisk] = useState(0);
+  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const loadedRef = useRef(null);
+
+  const overallAvgAttendance = useMemo(() => {
+    const vals = subjects.map((s) => perSubjectStats[s.id]?.avg ?? 0);
+    if (!vals.length) return 0;
+    return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+  }, [subjects, perSubjectStats]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    if (loadedRef.current === user.id) return;
+    loadedRef.current = user.id;
+
+    async function load() {
+      const { data: subs } = await fetchSubjects();
+      const subjectList = subs ?? [];
+      setSubjects(subjectList);
+
+      if (!subjectList.length) {
+        setLoading(false);
+        return;
+      }
+
+      // Parallel: summaries + student lists for all subjects at once
+      const [summaryResults, studentResults] = await Promise.all([
+        Promise.all(subjectList.map((s) => fetchAttendanceSummary(s.id))),
+        Promise.all(subjectList.map((s) => fetchStudentsForSubject(s.id))),
+      ]);
+
+      const stats = {};
+      const allStudentIds = new Set();
+      const atRiskIds = new Set();
+
+      subjectList.forEach((s, i) => {
+        const summary = summaryResults[i].data ?? [];
+        const students = studentResults[i].data ?? [];
+        const avg =
+          summary.length > 0
+            ? Math.round(
+                summary.reduce((sum, st) => sum + st.percentage, 0) /
+                  summary.length,
+              )
+            : 0;
+        const atRisk = summary.filter((st) => st.atRisk).length;
+        students.forEach((st) => allStudentIds.add(st.id));
+        summary.filter((st) => st.atRisk).forEach((st) => atRiskIds.add(st.id));
+        stats[s.id] = { avg, count: students.length, atRisk };
+      });
+
+      setPerSubjectStats(stats);
+      setTotalStudents(allStudentIds.size);
+      setTotalAtRisk(atRiskIds.size);
+      setSelectedSubject(subjectList[0]);
+      setLoading(false);
+    }
+
+    load();
+  }, [user?.id]);
+
+  const firstName = profile?.name?.split(" ")[0] ?? "there";
+
+  return (
+    <div style={{ padding: "clamp(1rem, 2vw, 1.5rem)" }}>
+      <div style={{ marginBottom: 24 }}>
+        <h1
+          style={{
+            fontFamily: "var(--font-display)",
+            fontWeight: 700,
+            fontSize: "1.5rem",
+            color: "var(--text-primary)",
+            margin: 0,
+            letterSpacing: "-0.02em",
+          }}
+        >
+          {getGreeting()}, {firstName} 👋
+        </h1>
+        <p
+          style={{
+            fontFamily: "var(--font-body)",
+            fontSize: "0.9rem",
+            color: "var(--text-muted)",
+            margin: "4px 0 0",
+          }}
+        >
+          {getFormattedDate()}
+        </p>
+      </div>
+
+      {loading ? (
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
+          style={{ marginBottom: 24 }}
+        >
+          {[0, 1, 2, 3].map((i) => (
+            <SkeletonCard key={i} />
           ))}
         </div>
       ) : (
@@ -560,7 +521,7 @@ function FacultyDashboard() {
         >
           <StatCard
             label="My Subjects"
-            value={totalSubjects}
+            value={subjects.length}
             sub="assigned this semester"
             icon={BookOpen}
             color="blue"
@@ -597,7 +558,6 @@ function FacultyDashboard() {
         </div>
       )}
 
-      {/* ── My Classes ────────────────────────────────────────────── */}
       <h2
         style={{
           fontFamily: "var(--font-display)",
@@ -652,7 +612,6 @@ function FacultyDashboard() {
         </div>
       )}
 
-      {/* ── Quick actions + performance (two column) ──────────────── */}
       {!loading && subjects.length > 0 && (
         <>
           <div
@@ -665,8 +624,6 @@ function FacultyDashboard() {
               subjectName={selectedSubject?.name}
             />
           </div>
-
-          {/* ── Full-width attendance summary ───────────────────── */}
           {selectedSubject && (
             <AttendanceSummary
               subjectId={selectedSubject.id}
@@ -679,7 +636,7 @@ function FacultyDashboard() {
   );
 }
 
-// ── Admin dashboard ─────────────────────────────────────────────────────────
+// ── Admin Dashboard ─────────────────────────────────────────────────────────
 
 function AdminDashboard() {
   const { user, profile } = useAuthStore();
@@ -694,31 +651,28 @@ function AdminDashboard() {
   const [subjects, setSubjects] = useState([]);
   const [students, setStudents] = useState([]);
   const [faculty, setFaculty] = useState([]);
-  // { [subjectId]: { name, students: summaryArray, avg } }
   const [allSummaries, setAllSummaries] = useState({});
-  // flat mark records, each enriched with subjectName
   const [allMarksFlat, setAllMarksFlat] = useState([]);
   const [trendData, setTrendData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const adminLoadedRef = useRef(null);
+  const loadedRef = useRef(null);
 
-  // ── Derived stats ──────────────────────────────────────────────
   const totalStudents = students.length;
   const totalFaculty = faculty.length;
   const totalSubjects = subjects.length;
 
   const overallAttendance = useMemo(() => {
     const avgs = subjects.map((s) => allSummaries[s.id]?.avg ?? 0);
-    if (avgs.length === 0) return 0;
-    return Math.round(avgs.reduce((sum, v) => sum + v, 0) / avgs.length);
+    if (!avgs.length) return 0;
+    return Math.round(avgs.reduce((a, b) => a + b, 0) / avgs.length);
   }, [subjects, allSummaries]);
 
   const marksAvg = useMemo(() => {
     const pcts = allMarksFlat
       .filter((m) => m.max_score > 0)
       .map((m) => Math.round((m.score / m.max_score) * 100));
-    if (pcts.length === 0) return 0;
-    return Math.round(pcts.reduce((sum, p) => sum + p, 0) / pcts.length);
+    if (!pcts.length) return 0;
+    return Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length);
   }, [allMarksFlat]);
 
   const atRiskCount = useMemo(() => {
@@ -734,11 +688,10 @@ function AdminDashboard() {
 
   useEffect(() => {
     if (!user?.id) return;
-    if (adminLoadedRef.current === user.id) return;
-    adminLoadedRef.current = user.id;
+    if (loadedRef.current === user.id) return;
+    loadedRef.current = user.id;
 
     async function load() {
-      // Step 1: base data in parallel
       const [subjectsResult, profilesResult] = await Promise.all([
         fetchSubjects(),
         fetchAllProfiles(),
@@ -750,19 +703,17 @@ function AdminDashboard() {
       setStudents(allProfiles.filter((p) => p.role === "student"));
       setFaculty(allProfiles.filter((p) => p.role === "faculty"));
 
-      if (subs.length === 0) {
+      if (!subs.length) {
         setLoading(false);
         return;
       }
 
-      // Step 2: per-subject summaries + marks + trend in parallel
       const [summaryResults, marksResults, trendResult] = await Promise.all([
         Promise.all(subs.map((s) => fetchAttendanceSummary(s.id))),
         Promise.all(subs.map((s) => fetchMarks(s.id))),
         fetchAttendanceTrend(),
       ]);
 
-      // Build summaries map
       const summaries = {};
       subs.forEach((s, i) => {
         const data = summaryResults[i].data ?? [];
@@ -776,14 +727,13 @@ function AdminDashboard() {
       });
       setAllSummaries(summaries);
 
-      // Build flat marks array enriched with subject name
       const marks = [];
       subs.forEach((s, i) => {
-        const data = marksResults[i].data ?? [];
-        data.forEach((m) => marks.push({ ...m, subjectName: s.name }));
+        (marksResults[i].data ?? []).forEach((m) =>
+          marks.push({ ...m, subjectName: s.name }),
+        );
       });
       setAllMarksFlat(marks);
-
       setTrendData(trendResult.data ?? []);
       setLoading(false);
     }
@@ -795,7 +745,6 @@ function AdminDashboard() {
 
   return (
     <div style={{ padding: "clamp(1rem, 2vw, 1.5rem)" }}>
-      {/* ── Greeting ──────────────────────────────────────────────── */}
       <div style={{ marginBottom: 24 }}>
         <h1
           style={{
@@ -812,7 +761,6 @@ function AdminDashboard() {
         <p
           style={{
             fontFamily: "var(--font-body)",
-            fontWeight: 400,
             fontSize: "0.9rem",
             color: "var(--text-muted)",
             margin: "4px 0 0",
@@ -822,7 +770,6 @@ function AdminDashboard() {
         </p>
       </div>
 
-      {/* ── System stats row ──────────────────────────────────────── */}
       <SystemStats
         totalStudents={totalStudents}
         totalFaculty={totalFaculty}
@@ -833,17 +780,13 @@ function AdminDashboard() {
         loading={loading}
       />
 
-      {/* ── Two-column: trend chart + subjects list ────────────────── */}
       <div
         className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
         style={{ marginBottom: 16 }}
       >
-        {/* Left (span 2): attendance trend */}
         <div className="lg:col-span-2">
           <AttendanceTrendChart data={trendData} loading={loading} />
         </div>
-
-        {/* Right (span 1): subjects overview */}
         <Card title="Subjects Overview">
           {loading ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -885,7 +828,6 @@ function AdminDashboard() {
                     : avg >= 60
                       ? "var(--accent-amber)"
                       : "var(--accent-red)";
-                const isLast = i === subjects.length - 1;
                 return (
                   <div
                     key={s.id}
@@ -894,15 +836,11 @@ function AdminDashboard() {
                       alignItems: "center",
                       justifyContent: "space-between",
                       padding: "10px 0",
-                      borderBottom: isLast ? "none" : "1px solid var(--border)",
-                      transition: "background 150ms ease",
+                      borderBottom:
+                        i === subjects.length - 1
+                          ? "none"
+                          : "1px solid var(--border)",
                       borderRadius: 4,
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "var(--accent-subtle)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "transparent";
                     }}
                   >
                     <div
@@ -923,7 +861,6 @@ function AdminDashboard() {
                           fontFamily: "var(--font-body)",
                           fontSize: "0.65rem",
                           fontWeight: 600,
-                          letterSpacing: "0.05em",
                           color: "var(--accent-blue)",
                           background: "var(--accent-blue-bg)",
                           border: "1px solid var(--accent-blue-border)",
@@ -952,7 +889,6 @@ function AdminDashboard() {
         </Card>
       </div>
 
-      {/* ── At-risk table (full width) ─────────────────────────────── */}
       <AtRiskTable
         attendanceSummaries={allSummaries}
         allMarks={allMarksFlat}
@@ -967,14 +903,7 @@ function AdminDashboard() {
 
 export default function DashboardPage() {
   const { role } = useAuthStore();
-
-  if (role === "faculty") {
-    return <FacultyDashboard />;
-  }
-
-  if (role === "admin") {
-    return <AdminDashboard />;
-  }
-
+  if (role === "faculty") return <FacultyDashboard />;
+  if (role === "admin") return <AdminDashboard />;
   return <StudentDashboard />;
 }

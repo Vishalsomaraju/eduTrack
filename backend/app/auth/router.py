@@ -35,9 +35,11 @@ async def update_my_profile(
     data: ProfileUpdate,
     user: dict = Depends(get_current_user)
 ):
+    # mode='json' serializes date/datetime objects to ISO strings
+    # so Supabase (which uses JSON internally) can handle them
     updated = service.update_profile(
         user["id"],
-        data.model_dump(exclude_none=True)
+        data.model_dump(exclude_none=True, mode='json')
     )
     if not updated:
         raise HTTPException(404, "Profile not found")
@@ -53,7 +55,7 @@ async def update_student_detail(
         raise HTTPException(403, "Students only")
     return service.upsert_student_detail(
         user["id"],
-        data.model_dump(exclude_none=True)
+        data.model_dump(exclude_none=True, mode='json')  # date fields serialize correctly
     )
 
 
@@ -66,7 +68,7 @@ async def update_faculty_detail(
         raise HTTPException(403, "Faculty only")
     return service.upsert_faculty_detail(
         user["id"],
-        data.model_dump(exclude_none=True)
+        data.model_dump(exclude_none=True, mode='json')
     )
 
 

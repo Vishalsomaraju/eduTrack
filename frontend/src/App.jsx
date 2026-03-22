@@ -10,6 +10,9 @@ import AnalyticsPage from "@/pages/AnalyticsPage";
 import ProfilePage from "@/pages/ProfilePage";
 import CoursesPage from "@/pages/CoursesPage";
 import NotFoundPage from "@/pages/NotFoundPage";
+import StudentsPage from "@/pages/admin/StudentsPage";
+import FacultyPage from "@/pages/admin/FacultyPage";
+import SubjectsPage from "@/pages/admin/SubjectsPage";
 import ProtectedRoute from "@/components/layout/ProtectedRoute";
 import AppShell from "@/components/layout/AppShell";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
@@ -127,7 +130,7 @@ function AppContent() {
           element={
             <ProtectedRoute roles={["admin"]}>
               <AppShell>
-                <StubPage title="Students" />
+                <StudentsPage />
               </AppShell>
             </ProtectedRoute>
           }
@@ -138,7 +141,7 @@ function AppContent() {
           element={
             <ProtectedRoute roles={["admin"]}>
               <AppShell>
-                <StubPage title="Faculty" />
+                <FacultyPage />
               </AppShell>
             </ProtectedRoute>
           }
@@ -149,7 +152,7 @@ function AppContent() {
           element={
             <ProtectedRoute roles={["admin"]}>
               <AppShell>
-                <StubPage title="Subjects" />
+                <SubjectsPage />
               </AppShell>
             </ProtectedRoute>
           }
