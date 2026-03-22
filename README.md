@@ -189,24 +189,6 @@ cp .env.example .env
 uvicorn main:app --reload --port 8000
 ```
 
-### Environment Variables
-
-**Frontend `.env.local`:**
-```
-VITE_SUPABASE_URL=https://xxxx.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJ...
-VITE_API_URL=http://localhost:8000
-```
-
-**Backend `.env`:**
-```
-SUPABASE_URL=https://xxxx.supabase.co
-SUPABASE_SERVICE_KEY=eyJ...
-SUPABASE_ANON_KEY=eyJ...
-SUPABASE_JWT_SECRET=your-jwt-secret
-FRONTEND_URL=http://localhost:5173
-```
-
 ---
 
 ## ✦ Project Structure
