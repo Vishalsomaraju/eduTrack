@@ -9,6 +9,13 @@ import AttendanceMarker from "@/components/attendance/AttendanceMarker";
 import AttendanceSummary from "@/components/attendance/AttendanceSummary";
 import AttendanceCalendar from "@/components/attendance/AttendanceCalendar";
 import { EmptyState, SkeletonTable } from "@/components/ui";
+import ExportButton from "@/components/ui/ExportButton";
+import {
+  downloadCSV,
+  buildFacultyAttendanceCSV,
+  buildStudentAttendanceCSV,
+  todayStr,
+} from "@/lib/csvExport";
 
 const ROLE_SUBTITLE = {
   admin: "System-wide attendance overview",
@@ -101,6 +108,7 @@ function FacultyView({ subjects }) {
   // We expose a separate selector so summary can be driven independently.
   const [selectedSubject, setSelectedSubject] = useState("");
   const selected = subjects.find((s) => s.id === selectedSubject);
+  const { fetchAttendanceSummary } = useAttendance();
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "clamp(1rem, 2.5vw, 1.75rem)" }}>
@@ -113,6 +121,20 @@ function FacultyView({ subjects }) {
             onChange={setSelectedSubject}
             label="Review Subject"
           />
+          {selectedSubject && (
+            <ExportButton
+              label="Export Attendance CSV"
+              onClick={async () => {
+                // Fetch summary data for export
+                const { data } = await fetchAttendanceSummary(selectedSubject);
+                const summaryArr = Array.isArray(data) ? data : [];
+                downloadCSV(
+                  buildFacultyAttendanceCSV(summaryArr, selected?.name || selectedSubject),
+                  `attendance_${selected?.code || selectedSubject}_${todayStr()}.csv`
+                );
+              }}
+            />
+          )}
           {selectedSubject && (
             <AttendanceSummary
               subjectId={selectedSubject}
@@ -220,6 +242,26 @@ function StudentView({ subjects, userId }) {
           </option>
         ))}
       </select>
+
+      {selectedSubject && summary && (
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <ExportButton
+            label="Export Attendance CSV"
+            disabled={safeRecords.length === 0}
+            onClick={() => {
+              const subj = subjects.find((s) => s.id === selectedSubject);
+              downloadCSV(
+                buildStudentAttendanceCSV(
+                  safeRecords,
+                  subj?.name || selectedSubject,
+                  summary
+                ),
+                `my_attendance_${subj?.code || selectedSubject}_${todayStr()}.csv`
+              );
+            }}
+          />
+        </div>
+      )}
 
       {selectedSubject && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">

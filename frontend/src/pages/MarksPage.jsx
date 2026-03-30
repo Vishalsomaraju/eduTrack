@@ -12,9 +12,12 @@ import { BookOpen } from "lucide-react";
 import api from "@/lib/api";
 import ExportButton from "@/components/ui/ExportButton";
 import {
-  exportFacultyCSV,
-  exportStudentCSV,
-  buildAttendanceMap,
+  downloadCSV,
+  buildFacultyMarksCSV,
+  buildFacultyLabMarksCSV,
+  buildStudentMarksCSV,
+  buildStudentLabMarksCSV,
+  todayStr,
 } from "@/lib/csvExport";
 
 const semLabel = (sem) => {
@@ -1112,42 +1115,6 @@ function StudentView({ marks, labMarks, allSubjects = [] }) {
         : "F"
       : "—";
 
-  // ── Student export handler ────────────────────────────────────────────────
-  async function handleStudentExport() {
-    const { user } = useAuthStore.getState();
-
-    // Fetch attendance summaries for all subjects that don't have them cached yet
-    const missingIds = allSubjects
-      .filter((s) => !attendanceSummaries[s.id])
-      .map((s) => s.id);
-
-    if (missingIds.length > 0 && user?.id) {
-      const results = await Promise.all(
-        missingIds.map((id) => fetchAttendanceSummary(id, user.id)),
-      );
-      const newSummaries = { ...attendanceSummaries };
-      missingIds.forEach((id, i) => {
-        newSummaries[id] = results[i].data ?? {};
-      });
-      setAttendanceSummaries(newSummaries);
-
-      exportStudentCSV({
-        allSubjects,
-        theoryMarks: marks,
-        labMarks,
-        attendanceSummaries: newSummaries,
-        studentName: profile?.name,
-      });
-    } else {
-      exportStudentCSV({
-        allSubjects,
-        theoryMarks: marks,
-        labMarks,
-        attendanceSummaries,
-        studentName: profile?.name,
-      });
-    }
-  }
 
   return (
     <div>
@@ -1186,7 +1153,6 @@ function StudentView({ marks, labMarks, allSubjects = [] }) {
             R22 B.Tech CSE — KPRIT Hyderabad
           </p>
         </div>
-        <ExportButton label="Export My Report" onExport={handleStudentExport} />
       </div>
 
       {/* Semester tabs */}
@@ -1222,6 +1188,29 @@ function StudentView({ marks, labMarks, allSubjects = [] }) {
             {semLabel(sem)}
           </button>
         ))}
+      </div>
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+        <ExportButton
+          label="Export Theory Marks"
+          disabled={marks.length === 0}
+          onClick={() => {
+            downloadCSV(
+              buildStudentMarksCSV(marks, allSubjects),
+              `my_theory_marks_${todayStr()}.csv`
+            );
+          }}
+        />
+        <ExportButton
+          label="Export Lab Marks"
+          disabled={labMarks.length === 0}
+          onClick={() => {
+            downloadCSV(
+              buildStudentLabMarksCSV(labMarks, allSubjects),
+              `my_lab_marks_${todayStr()}.csv`
+            );
+          }}
+        />
       </div>
 
       {/* Theory / Lab tabs */}
@@ -1443,32 +1432,6 @@ function FacultyView() {
     });
   }, [selectedSubject, isLab]);
 
-  // ── Faculty export handler ────────────────────────────────────────────────
-  async function handleFacultyExport() {
-    function toArray(res) {
-      if (Array.isArray(res)) return res;
-      if (res && Array.isArray(res.data)) return res.data;
-      return [];
-    }
-
-    const [theoryRes, labRes] = await Promise.all([
-      isLab
-        ? Promise.resolve([])
-        : api.get(`/marks/${selectedSubject}`).catch(() => null),
-      isLab
-        ? api.get(`/lab-marks/${selectedSubject}`).catch(() => null)
-        : Promise.resolve([]),
-    ]);
-
-    exportFacultyCSV({
-      students,
-      theoryMarks: toArray(theoryRes),
-      labMarks: toArray(labRes),
-      attendanceRecs: attendanceRecs,
-      subjectName: selectedSubjectData?.name,
-      subjectCode: selectedSubjectData?.code,
-    });
-  }
 
   const handleUpdateTheory = async (studentId, field, value) => {
     const valObj = {};
@@ -1584,11 +1547,6 @@ function FacultyView() {
             Enter and update marks for your assigned classes.
           </p>
         </div>
-        <ExportButton
-          label="Export Class CSV"
-          disabled={!selectedSubject || students.length === 0}
-          onExport={handleFacultyExport}
-        />
       </div>
 
       {/* Subject selector */}
@@ -1627,6 +1585,30 @@ function FacultyView() {
             </option>
           ))}
         </select>
+        {selectedSubject && (
+          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+            <ExportButton
+              label={isLab ? "Export Lab Marks CSV" : "Export Theory Marks CSV"}
+              disabled={students.length === 0}
+              onClick={() => {
+                const subj = subjects.find((s) => s.id === selectedSubject);
+                const code = subj?.code || selectedSubject;
+                const date = todayStr();
+                if (isLab) {
+                  downloadCSV(
+                    buildFacultyLabMarksCSV(students, labSubjectMarks),
+                    `lab_marks_${code}_${date}.csv`
+                  );
+                } else {
+                  downloadCSV(
+                    buildFacultyMarksCSV(students, subjectMarks, code),
+                    `marks_${code}_${date}.csv`
+                  );
+                }
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {/* Marks table */}

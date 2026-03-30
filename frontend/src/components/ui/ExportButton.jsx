@@ -1,81 +1,57 @@
-// ExportButton.jsx — Reusable CSV download button with loading state.
+// ExportButton.jsx — Slim CSV download trigger.
+// Matches EduTrack design tokens. Drop-in anywhere.
+//
+// Props:
+//   onClick  — fn  (call downloadCSV inside)
+//   label    — string (default "Export CSV")
+//   disabled — bool
 
-import { useState } from "react";
 import { Download } from "lucide-react";
 
 export default function ExportButton({
-  onExport,
+  onClick,
   label = "Export CSV",
   disabled = false,
 }) {
-  const [loading, setLoading] = useState(false);
-
-  async function handleClick() {
-    if (loading || disabled) return;
-    setLoading(true);
-    try {
-      await onExport();
-    } catch (err) {
-      console.error("Export failed:", err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
     <button
-      onClick={handleClick}
-      disabled={disabled || loading}
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
       style={{
         display: "inline-flex",
         alignItems: "center",
         gap: 6,
         padding: "6px 14px",
         borderRadius: 8,
-        border: "1px solid var(--accent-green-border)",
-        background:
-          loading || disabled ? "var(--bg-elevated)" : "var(--accent-green-bg)",
-        color:
-          loading || disabled ? "var(--text-muted)" : "var(--accent-green)",
+        border: "1px solid var(--border)",
+        background: "transparent",
+        color: disabled ? "var(--text-muted)" : "var(--text-secondary)",
         fontFamily: "var(--font-display)",
         fontWeight: 600,
         fontSize: "0.8rem",
-        cursor: loading || disabled ? "not-allowed" : "pointer",
-        transition: "all 150ms ease",
+        cursor: disabled ? "not-allowed" : "pointer",
         opacity: disabled ? 0.5 : 1,
+        transition: "all 150ms ease",
         whiteSpace: "nowrap",
       }}
       onMouseEnter={(e) => {
-        if (!disabled && !loading)
-          e.currentTarget.style.background =
-            "color-mix(in srgb, var(--accent-green) 20%, transparent)";
+        if (!disabled) {
+          e.currentTarget.style.background = "var(--bg-elevated)";
+          e.currentTarget.style.borderColor = "var(--accent)";
+          e.currentTarget.style.color = "var(--accent)";
+        }
       }}
       onMouseLeave={(e) => {
-        if (!disabled && !loading)
-          e.currentTarget.style.background = "var(--accent-green-bg)";
+        e.currentTarget.style.background = "transparent";
+        e.currentTarget.style.borderColor = "var(--border)";
+        e.currentTarget.style.color = disabled
+          ? "var(--text-muted)"
+          : "var(--text-secondary)";
       }}
     >
-      {loading ? (
-        <svg
-          style={{
-            width: 14,
-            height: 14,
-            animation: "spin 0.8s linear infinite",
-            flexShrink: 0,
-          }}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <circle cx="12" cy="12" r="10" opacity="0.2" />
-          <path d="M4 12a8 8 0 018-8V0" />
-          <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-        </svg>
-      ) : (
-        <Download size={14} style={{ flexShrink: 0 }} />
-      )}
-      {loading ? "Exporting..." : label}
+      <Download size={14} />
+      {label}
     </button>
   );
 }
