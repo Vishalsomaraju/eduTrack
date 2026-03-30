@@ -644,15 +644,16 @@ function AdminDashboard() {
 
     async function load() {
       // Wave 1: subjects + profiles
-      const [subjectsResult, profilesResult] = await Promise.all([
+      const [subjectsResult, profilesResult, facultyRes] = await Promise.all([
         fetchSubjects(),
         fetchAllProfiles(),
+        api.get("/faculty"),
       ]);
       const subs = subjectsResult.data ?? [];
       const allProfiles = profilesResult.data ?? [];
       setSubjects(subs);
       setStudents(allProfiles.filter((p) => p.role === "student"));
-      setFaculty(allProfiles.filter((p) => p.role === "faculty"));
+      setFaculty(facultyRes || []);
 
       // Wave 2: subject-comparison replaces N attendance + N marks calls
       const firstSubjectId = subs[0]?.id;
